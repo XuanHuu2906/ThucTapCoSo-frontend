@@ -7,7 +7,7 @@
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
-
+    "ignoreDeprecations": "6.0",
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
@@ -30,6 +30,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"],
-  
+  "include": ["src"]
 }
