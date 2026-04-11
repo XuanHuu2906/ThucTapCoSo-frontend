@@ -1,23 +1,34 @@
-import { Bell } from "lucide-react";
+import { Bell, Menu } from "lucide-react"; // Bổ sung icon Menu
 import React from "react";
 
 interface HeaderProps {
-  onMenuClick?: () => void; // ← thêm prop này để toggle sidebar
+  onMenuClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = () => {
+// Bổ sung destructuring { onMenuClick } ở đây
+const DashboardHeader: React.FC<HeaderProps> = ({ onMenuClick }) => {
   return (
     <header className="h-16 bg-[#2F86C6] border-b border-blue-400 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
-      {/* Breadcrumb */}
-      <div className="text-sm">
-        <span className="cursor-pointer text-blue-100 hover:text-white transition-colors duration-300">
-          Trang chủ
-        </span>
-        <span className="mx-2 text-blue-300">/</span>
-        <span className="font-semibold text-white">Danh sách ứng viên</span>
+      {/* PHẦN BÊN TRÁI: Nút Menu + Breadcrumb */}
+      <div className="flex items-center gap-3">
+        {/* Nút bấm để mở/đóng Sidebar */}
+        <button
+          onClick={onMenuClick}
+          className="p-1.5 text-white hover:bg-blue-600 rounded-md transition-colors cursor-pointer block lg:hidden" // Ẩn trên màn hình to, hiện trên mobile/tablet
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <div className="text-sm">
+          <span className="cursor-pointer text-blue-100 hover:text-white transition-colors duration-300">
+            Trang chủ
+          </span>
+          <span className="mx-2 text-blue-300">/</span>
+          <span className="font-semibold text-white">Danh sách ứng viên</span>
+        </div>
       </div>
 
-      {/* PHẢI: Bell + Profile (giữ nguyên) */}
+      {/* PHẦN BÊN PHẢI: Bell + Profile (Giữ nguyên của bạn vì đã quá chuẩn) */}
       <div className="flex items-center gap-4">
         <button className="relative p-2 text-white cursor-pointer hover:bg-blue-600 rounded-full transition-colors">
           <Bell className="w-5 h-5" />
@@ -44,4 +55,4 @@ const Header: React.FC<HeaderProps> = () => {
   );
 };
 
-export default Header;
+export default DashboardHeader;
