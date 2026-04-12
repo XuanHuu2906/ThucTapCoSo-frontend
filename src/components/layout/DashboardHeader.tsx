@@ -1,6 +1,6 @@
 import { Bell, Menu } from "lucide-react"; // Bổ sung icon Menu
 import React from "react";
-
+import { Link } from "react-router-dom";
 interface HeaderProps {
   onMenuClick?: () => void;
 }
@@ -21,10 +21,12 @@ const DashboardHeader: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
         <div className="text-sm">
           <span className="cursor-pointer text-blue-100 hover:text-white transition-colors duration-300">
-            Trang chủ
+            <Link to="/">Trang chủ</Link>
           </span>
           <span className="mx-2 text-blue-300">/</span>
-          <span className="font-semibold text-white">Danh sách ứng viên</span>
+          <span className="font-semibold text-white">
+            <Link to="/jobs">Danh sách công việc</Link>
+          </span>
         </div>
       </div>
 
