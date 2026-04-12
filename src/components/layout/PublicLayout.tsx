@@ -6,7 +6,7 @@ import DashboardHeader from "./DashboardHeader";
 
 const PublicLayout: React.FC = () => {
   return (
-    <div className="min-h-screen w-full relative">
+    <div className="min-h-screen w-full relative z-10">
       {/* Radial Gradient Background */}
       <div
         className="absolute inset-0 z-0"
