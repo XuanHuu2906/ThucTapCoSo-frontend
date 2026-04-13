@@ -1,36 +1,57 @@
-import { Bell, Menu } from "lucide-react"; // Bổ sung icon Menu
+import { Bell, Menu } from "lucide-react";
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
-// Bổ sung destructuring { onMenuClick } ở đây
 const DashboardHeader: React.FC<HeaderProps> = ({ onMenuClick }) => {
+  const location = useLocation();
+
   return (
     <header className="h-16 bg-[#2F86C6] border-b border-blue-400 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
-      {/* PHẦN BÊN TRÁI: Nút Menu + Breadcrumb */}
+      {/* LEFT */}
       <div className="flex items-center gap-3">
-        {/* Nút bấm để mở/đóng Sidebar */}
         <button
           onClick={onMenuClick}
-          className="p-1.5 text-white hover:bg-blue-600 rounded-md transition-colors cursor-pointer block lg:hidden" // Ẩn trên màn hình to, hiện trên mobile/tablet
+          className="p-1.5 text-white hover:bg-blue-600 rounded-md transition-colors cursor-pointer block lg:hidden"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="text-sm">
-          <span className="cursor-pointer text-blue-100 hover:text-white transition-colors duration-300">
-            <Link to="/">Trang chủ</Link>
-          </span>
+        <div className="text-sm flex items-center">
+          {/* Trang chủ */}
+          <Link
+            to="/"
+            className={`transition-all duration-300 px-2 py-1 rounded-md ${
+              location.pathname === "/"
+                ? "bg-white text-[#2F86C6] font-semibold"
+                : "text-blue-100 hover:text-white"
+            }`}
+          >
+            Trang chủ
+          </Link>
+
           <span className="mx-2 text-blue-300">/</span>
-          <span className="font-semibold text-white">
-            <Link to="/jobs">Danh sách công việc</Link>
-          </span>
+
+          {/* Jobs */}
+          <Link
+            to="/jobs"
+            className={`transition-all duration-300 px-2 py-1 rounded-md ${
+              location.pathname.startsWith("/jobs")
+                ? "bg-white text-[#2F86C6] font-semibold"
+                : "text-blue-100 hover:text-white"
+            }`}
+          >
+            Danh sách công việc
+          </Link>
+
+          {/* Create */}
         </div>
       </div>
 
-      {/* PHẦN BÊN PHẢI: Bell + Profile (Giữ nguyên của bạn vì đã quá chuẩn) */}
+      {/* RIGHT */}
       <div className="flex items-center gap-4">
         <button className="relative p-2 text-white cursor-pointer hover:bg-blue-600 rounded-full transition-colors">
           <Bell className="w-5 h-5" />
