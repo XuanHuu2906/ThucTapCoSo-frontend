@@ -15,14 +15,12 @@ const PublicLayout: React.FC = () => {
         }}
       />
       {/* Your Content/Components */}
-
       {/* Lớp nội dung đè lên trên */}
       <div className="relative z-10 flex flex-col min-h-screen">
         <PublicHeader />
         <main className="flex-1 w-full py-8 px-8 container mx-auto">
           <Outlet />
         </main>
-
         <Footer />
       </div>
     </div>
