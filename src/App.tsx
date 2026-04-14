@@ -3,7 +3,7 @@ import PublicLayout from "./components/layout/public";
 import DashboardLayout from "./components/layout/dashboard";
 import { ThemeProvider } from "./context/ThemeContext";
 
-// Trang công khai 
+// Trang công khai
 import HomePage from "./pages/HomePage";
 import JobList from "./pages/Jobs/JobList";
 import JobDetail from "./pages/Jobs/JobDetail";
@@ -28,7 +28,10 @@ function App() {
           {/* Trang nội bộ */}
           <Route element={<DashboardLayout />}>
             {/* Recruiter */}
-            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+            <Route
+              path="/recruiter/dashboard"
+              element={<RecruiterDashboard />}
+            />
           </Route>
         </Routes>
       </BrowserRouter>
@@ -37,6 +40,3 @@ function App() {
 }
 
 export default App;
-
-
-

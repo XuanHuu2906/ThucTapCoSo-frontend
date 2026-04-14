@@ -10,7 +10,12 @@ import type { UserRole } from "../../../types";
 const MOCK_ROLE: UserRole = "recruiter";
 
 // Danh sách các role cần hiện Header
-const ROLES_WITH_HEADER: UserRole[] = ["recruiter", "manager", "director", "probationer"];
+const ROLES_WITH_HEADER: UserRole[] = [
+  "recruiter",
+  "manager",
+  "director",
+  "probationer",
+];
 
 const DashboardLayout = () => {
   const role = MOCK_ROLE;
