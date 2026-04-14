@@ -50,11 +50,7 @@ const DashboardHeader: React.FC<HeaderProps> = ({ onMenuClick }) => {
         </div>
       </div>
 
-<<<<<<< HEAD:src/components/layout/dashboard/Header.tsx
-  {/* PHẢI: Bell + Profile (giữ nguyên) */ }
-=======
       {/* RIGHT */}
->>>>>>> origin/main:src/components/layout/DashboardHeader.tsx
   <div className="flex items-center gap-4">
     <button className="relative p-2 text-white cursor-pointer hover:bg-blue-600 rounded-full transition-colors">
       <Bell className="w-5 h-5" />
