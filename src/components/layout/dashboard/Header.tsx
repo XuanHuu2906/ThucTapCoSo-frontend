@@ -53,11 +53,12 @@ const DashboardHeader: React.FC<HeaderProps> = ({ onMenuClick }) => {
       </div>
 
       {/* RIGHT */}
-      <div className="flex items-center gap-4">
-        <button className="relative p-2 text-white cursor-pointer hover:bg-blue-600 rounded-full transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-[#2F86C6] rounded-full animate-pulse"></span>
-        </button>
+>>>>>>> origin/main:src/components/layout/DashboardHeader.tsx
+  <div className="flex items-center gap-4">
+    <button className="relative p-2 text-white cursor-pointer hover:bg-blue-600 rounded-full transition-colors">
+      <Bell className="w-5 h-5" />
+      <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-[#2F86C6] rounded-full animate-pulse"></span>
+    </button>
 
         {/* Nút chuyển Dark / Light mode */}
         <ThemeToggle />
