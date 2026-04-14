@@ -3,9 +3,8 @@ import PublicLayout from "./components/layout/public";
 import DashboardLayout from "./components/layout/dashboard";
 import { ThemeProvider } from "./context/ThemeContext";
 
-// Trang công khai 
+// Trang công khai
 import HomePage from "./pages/HomePage";
-import JobList from "./pages/Jobs/JobList";
 import JobDetail from "./pages/Jobs/JobDetail";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -21,16 +20,18 @@ function App() {
           {/* Trang công khai */}
           <Route path="/" element={<PublicLayout />}>
             <Route index element={<HomePage />} />
-            <Route path="jobs" element={<JobList />} />
-            <Route path="jobs/:id" element={<JobDetail />} />
+            <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<NotFound />} />
           </Route>
-
           {/* Trang nội bộ */}
           <Route element={<DashboardLayout />}>
             {/* Recruiter */}
-            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+            <Route
+              path="/recruiter/dashboard"
+              element={<RecruiterDashboard />}
+            />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>
@@ -39,6 +40,3 @@ function App() {
 }
 
 export default App;
-
-
-

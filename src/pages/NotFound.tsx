@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Home, SearchX } from "lucide-react";
+import { Home, SearchX } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+    <div className="flex min-h-screen items-center justify-center  px-6">
       <div className="relative w-full max-w-2xl text-center">
-        <div className="pointer-events-none absolute inset-x-0 top-[-4.5rem] select-none text-center text-[8rem] font-black leading-none tracking-tight text-slate-200 sm:text-[11rem]">
+        <div className="pointer-events-none absolute inset-x-0 -top-18 select-none text-center text-[8rem] font-black leading-none tracking-tight text-slate-200 sm:text-[11rem]">
           404
         </div>
 
@@ -31,15 +31,6 @@ export default function NotFound() {
               <Home className="h-4 w-4" />
               Quay lại Trang chủ
             </Link>
-
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Quay lại trước đó
-            </button>
           </div>
         </div>
       </div>
