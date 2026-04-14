@@ -1,8 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Footer from "./Footer";
-import PublicHeader from "./PublicHeader";
-import DashboardHeader from "./DashboardHeader";
+import PublicHeader from "./Header";
 
 const PublicLayout: React.FC = () => {
   return (
@@ -20,7 +19,6 @@ const PublicLayout: React.FC = () => {
       {/* Lớp nội dung đè lên trên */}
       <div className="relative z-10 flex flex-col min-h-screen">
         <PublicHeader />
-        <DashboardHeader />
         <main className="flex-1 w-full py-8 px-8 container mx-auto">
           <Outlet />
         </main>

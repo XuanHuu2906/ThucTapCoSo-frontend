@@ -1,24 +1,42 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-// Chỉnh lại import cho đồng nhất
-import PublicLayout from "./components/layout/PublicLayout";
+import PublicLayout from "./components/layout/public";
+import DashboardLayout from "./components/layout/dashboard";
+import { ThemeProvider } from "./context/ThemeContext";
+
+// Trang công khai 
+import HomePage from "./pages/HomePage";
 import JobList from "./pages/Jobs/JobList";
 import JobDetail from "./pages/Jobs/JobDetail";
 import NotFound from "./pages/NotFound";
-import HomePage from "./pages/HomePage";
+
+// Trang nội bộ – Recruiter
+import RecruiterDashboard from "./pages/recruiter/Dashboard";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<PublicLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="jobs" element={<JobList />} />{" "}
-          <Route path="jobs/:id" element={<JobDetail />} />{" "}
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Trang công khai */}
+          <Route path="/" element={<PublicLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="jobs" element={<JobList />} />
+            <Route path="jobs/:id" element={<JobDetail />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+
+          {/* Trang nội bộ */}
+          <Route element={<DashboardLayout />}>
+            {/* Recruiter */}
+            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
 export default App;
+
+
+
