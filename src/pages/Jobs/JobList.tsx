@@ -22,7 +22,7 @@ const JobList: React.FC = () => {
           {jobs.map((job) => (
             <div
               key={job.id}
-              className="group bg-white/90 border border-violet-700 rounded-2xl p-6 shadow-lg hover:shadow-violet-500 hover:border-violet-500 transition-all duration-300 transform hover:-translate-y-1"
+              className="group bg-white/90 border border-[#cccdfa] rounded-2xl p-6 shadow-lg hover:shadow-[#cccdfa] hover:border-[#cccdfa] transition-all duration-300 transform hover:-translate-y-1"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
