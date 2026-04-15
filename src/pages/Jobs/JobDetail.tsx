@@ -2,6 +2,7 @@ import { ArrowLeft, BadgeDollarSign, MapPin, FileText } from "lucide-react";
 import React from "react";
 import { Link, useParams } from "react-router-dom";
 import NotFound from "../NotFound";
+import Button from "@/components/ui/button";
 
 const jobs = [
   {
@@ -104,9 +105,7 @@ const JobDetail: React.FC = () => {
 
         {/* Nút Call-to-action (Thêm vào để UI trông hoàn thiện hơn) */}
         <div className="mt-10 flex justify-end">
-          <button className="w-full md:w-auto px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all duration-300 transform hover:-translate-y-1">
-            Ứng tuyển ngay
-          </button>
+          <Button>Ứng tuyển ngay</Button>
         </div>
       </div>
     </div>

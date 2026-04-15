@@ -7,12 +7,15 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      aria-label={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+      aria-label={
+        theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"
+      }
       title={theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
       className="
+        flex items-center justify-center
         relative p-2 rounded-full
-        text-white
-        hover:bg-blue-600
+      bg-blue-600 text-white 
+       hover:bg-blue-200 hover:text-blue-600
         transition-colors duration-300
         cursor-pointer
         focus:outline-none focus:ring-2 focus:ring-white/40

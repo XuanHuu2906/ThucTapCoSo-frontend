@@ -70,7 +70,9 @@ function Dashboard() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Dashboard Overview
+        </h1>
       </div>
 
       {/* Metric Cards - 3 columns */}
@@ -85,7 +87,7 @@ function Dashboard() {
               24
             </p>
           </div>
-          <Briefcase className="absolute -bottom-4 -right-2 h-24 w-24 text-slate-100 opacity-50 dark:text-slate-800" />
+          <Briefcase className="absolute -bottom-4 -right-2 h-24 w-24 text-gray-300 opacity-50 dark:text-slate-800" />
         </div>
 
         {/* Card 2 */}
@@ -103,7 +105,7 @@ function Dashboard() {
               </p>
             </div>
           </div>
-          <Users className="absolute -bottom-4 -right-2 h-24 w-24 text-slate-100 opacity-50 dark:text-slate-800" />
+          <Users className="absolute -bottom-4 -right-2 h-24 w-24 text-gray-300 opacity-50 dark:text-slate-800" />
         </div>
 
         {/* Card 3 */}
@@ -116,7 +118,7 @@ function Dashboard() {
               5
             </p>
           </div>
-          <Calendar className="absolute -bottom-4 -right-2 h-24 w-24 text-slate-100 opacity-50 dark:text-slate-800" />
+          <Calendar className="absolute -bottom-4 -right-2 h-24 w-24 text-gray-300 opacity-50 dark:text-slate-800" />
         </div>
       </div>
 
@@ -132,33 +134,45 @@ function Dashboard() {
               Thống kê lượng ứng viên mới trong 7 ngày qua
             </p>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-75 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+              <LineChart
+                data={data}
+                margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#E2E8F0"
+                />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#64748B', fontSize: 12 }}
+                  tick={{ fill: "#64748B", fontSize: 12 }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#64748B', fontSize: 12 }}
+                  tick={{ fill: "#64748B", fontSize: 12 }}
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                  cursor={{ stroke: '#f1f5f9', strokeWidth: 2 }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow:
+                      "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+                  }}
+                  cursor={{ stroke: "#f1f5f9", strokeWidth: 2 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="candidates"
                   stroke="#3B82F6"
                   strokeWidth={3}
-                  dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#3B82F6' }}
+                  dot={{ r: 4, strokeWidth: 2, fill: "#fff" }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: "#3B82F6" }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -173,7 +187,9 @@ function Dashboard() {
                 Lịch phỏng vấn hôm nay
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Bạn có {interviews.filter(i => i.status === 'upcoming').length} lịch sắp tới
+                Bạn có{" "}
+                {interviews.filter((i) => i.status === "upcoming").length} lịch
+                sắp tới
               </p>
             </div>
           </div>
@@ -185,21 +201,27 @@ function Dashboard() {
                 className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${interview.status === 'done'
-                    ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                    : 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                    }`}>
-                    {interview.status === 'done' ? (
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                      interview.status === "done"
+                        ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                        : "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                    }`}
+                  >
+                    {interview.status === "done" ? (
                       <CheckCircle2 className="h-5 w-5" />
                     ) : (
                       <Clock className="h-5 w-5" />
                     )}
                   </div>
                   <div>
-                    <p className={`font-medium ${interview.status === 'done'
-                      ? 'text-slate-500 dark:text-slate-400 line-through'
-                      : 'text-slate-900 dark:text-slate-50'
-                      }`}>
+                    <p
+                      className={`font-medium ${
+                        interview.status === "done"
+                          ? "text-slate-500 dark:text-slate-400 line-through"
+                          : "text-slate-900 dark:text-slate-50"
+                      }`}
+                    >
                       {interview.candidate}
                     </p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -208,17 +230,23 @@ function Dashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-sm font-medium ${interview.status === 'done'
-                    ? 'text-slate-400 dark:text-slate-500'
-                    : 'text-slate-900 dark:text-slate-50'
-                    }`}>
+                  <p
+                    className={`text-sm font-medium ${
+                      interview.status === "done"
+                        ? "text-slate-400 dark:text-slate-500"
+                        : "text-slate-900 dark:text-slate-50"
+                    }`}
+                  >
                     {interview.time}
                   </p>
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold mt-1 ${interview.status === 'done'
-                    ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                    : 'bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
-                    }`}>
-                    {interview.status === 'done' ? 'Đã xong' : 'Sắp diễn ra'}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold mt-1 ${
+                      interview.status === "done"
+                        ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                        : "bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+                    }`}
+                  >
+                    {interview.status === "done" ? "Đã xong" : "Sắp diễn ra"}
                   </span>
                 </div>
               </div>

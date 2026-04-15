@@ -31,7 +31,6 @@ function App() {
               path="/recruiter/dashboard"
               element={<RecruiterDashboard />}
             />
-            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>
