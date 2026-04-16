@@ -11,7 +11,10 @@ import NotFound from "./pages/NotFound";
 
 // Trang nội bộ – Recruiter
 import RecruiterDashboard from "./pages/recruiter/Dashboard";
-
+import DashboardManager from "./pages/manager/DashBoard";
+import Interviews from "./pages/manager/Interviews";
+import Reviews from "./pages/manager/Reviews";
+import { ManagerProvider } from "./context/ManagerContext";
 function App() {
   return (
     <ThemeProvider>
@@ -22,7 +25,6 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/login" element={<Login />} />
-            <Route path="*" element={<NotFound />} />
           </Route>
           {/* Trang nội bộ */}
           <Route element={<DashboardLayout />}>
@@ -32,6 +34,19 @@ function App() {
               element={<RecruiterDashboard />}
             />
           </Route>
+          <Route
+            path="/manager"
+            element={
+              <ManagerProvider>
+                <DashboardLayout />
+              </ManagerProvider>
+            }
+          >
+            <Route path="dashboard" element={<DashboardManager />} />
+            <Route path="interviews" element={<Interviews />} />
+            <Route path="reviews" element={<Reviews />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
