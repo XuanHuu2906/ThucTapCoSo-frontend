@@ -18,6 +18,10 @@ import { ManagerProvider } from "./context/ManagerContext";
 
 import RecruiterJobs from "./pages/recruiter/Jobs";
 
+// Trang nội bộ – Director
+import DirectorDashboard from "./pages/director/Dashboard";
+import DirectorApprovals from "./pages/director/Approvals";
+
 function App() {
   return (
     <ThemeProvider>
@@ -50,6 +54,14 @@ function App() {
             <Route path="interviews" element={<Interviews />} />
             <Route path="reviews" element={<Reviews />} />
           </Route>
+
+          <Route element={<DashboardLayout />}>
+            {/* Trang dashboard của Recruiter */}
+            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+            <Route path="/director/dashboard" element={<DirectorDashboard />} />
+            <Route path="/director/approvals" element={<DirectorApprovals />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
