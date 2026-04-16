@@ -13,6 +13,10 @@ import NotFound from "./pages/NotFound";
 // Trang nội bộ – Recruiter
 import RecruiterDashboard from "./pages/recruiter/Dashboard";
 
+// Trang nội bộ – Director
+import DirectorDashboard from "./pages/director/Dashboard";
+import DirectorApprovals from "./pages/director/Approvals";
+
 function App() {
   return (
     <ThemeProvider>
@@ -32,6 +36,14 @@ function App() {
             {/* Recruiter */}
             <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
           </Route>
+
+          <Route element={<DashboardLayout />}>
+            {/* Trang dashboard của Recruiter */}
+            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+            <Route path="/director/dashboard" element={<DirectorDashboard />} />
+            <Route path="/director/approvals" element={<DirectorApprovals />} />
+          </Route>
+
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
