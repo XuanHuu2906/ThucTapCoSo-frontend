@@ -15,6 +15,9 @@ import DashboardManager from "./pages/manager/DashBoard";
 import Interviews from "./pages/manager/Interviews";
 import Reviews from "./pages/manager/Reviews";
 import { ManagerProvider } from "./context/ManagerContext";
+
+import RecruiterJobs from "./pages/recruiter/Jobs";
+
 function App() {
   return (
     <ThemeProvider>
@@ -33,6 +36,7 @@ function App() {
               path="/recruiter/dashboard"
               element={<RecruiterDashboard />}
             />
+            <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
           </Route>
           <Route
             path="/manager"

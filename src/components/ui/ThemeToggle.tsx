@@ -14,8 +14,6 @@ const ThemeToggle = () => {
       className="
         flex items-center justify-center
         relative p-2 rounded-full
-      bg-blue-600 text-white 
-       hover:bg-blue-200 hover:text-blue-600
         transition-colors duration-300
         cursor-pointer
         focus:outline-none focus:ring-2 focus:ring-white/40
