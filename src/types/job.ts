@@ -47,6 +47,7 @@ export interface Job {
   headcount: number;                 // Số lượng cần tuyển
   deadline: string;                  // Hạn nộp hồ sơ – định dạng "2024-12-31" (REQ-004)
   status: JobStatus;                 // Trạng thái tin tuyển dụng
+  applicants?: number;               // Số lượng người đã ứng tuyển (được tính toán từ bảng Application)
   createdBy: string;                 // ID của recruiter đã tạo tin này
   createdAt: string;                 // Ngày tạo tin
   updatedAt: string;                 // Ngày cập nhật gần nhất

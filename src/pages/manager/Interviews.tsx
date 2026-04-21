@@ -139,13 +139,13 @@ const Interviews = () => {
                             <p className="text-sm font-medium mb-3">Kết Quả</p>
                             <div className="grid grid-cols-2 gap-4">
                               <Button
-                                className="h-16 text-lg border-2 border-green-500 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+                                className="h-16 text-lg border-2 border-green-500 bg-green-500 text-green-700 hover:bg-green-100 hover:text-green-800"
                                 variant="primary"
                               >
                                 Đạt
                               </Button>
                               <Button
-                                className="h-16 text-lg border-2 border-red-500 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
+                                className="h-16 text-lg border-2 border-red-500 bg-red-500 text-red-700 hover:bg-red-100 hover:text-red-800"
                                 variant="primary"
                               >
                                 Không đạt
