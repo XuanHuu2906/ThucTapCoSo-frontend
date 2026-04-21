@@ -11,37 +11,47 @@ import NotFound from "./pages/NotFound";
 
 // Trang nội bộ – Recruiter
 import RecruiterDashboard from "./pages/recruiter/Dashboard";
+import RecruiterJobs from "./pages/recruiter/Jobs";
+import RecruiterCandidates from "./pages/recruiter/Candidates";
+import Probation from "./pages/recruiter/Probation";
+import Reports from "./pages/recruiter/Reports";
+
+// Trang nội bộ – Manager
 import DashboardManager from "./pages/manager/DashBoard";
 import Interviews from "./pages/manager/Interviews";
 import Reviews from "./pages/manager/Reviews";
 import { ManagerProvider } from "./context/ManagerContext";
 
-import RecruiterJobs from "./pages/recruiter/Jobs";
-
 // Trang nội bộ – Director
 import DirectorDashboard from "./pages/director/Dashboard";
 import DirectorApprovals from "./pages/director/Approvals";
+import DirectorReports from "./pages/director/Reports";
+
+// Trang nội bộ – Probationer
+import ProbationerDashboard from "./pages/probationer/Dashboard";
 
 function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
         <Routes>
-          {/* Trang công khai */}
-          <Route path="/" element={<PublicLayout />}>
-            <Route index element={<HomePage />} />
+          {/* Public Routes */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<HomePage />} />
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/login" element={<Login />} />
           </Route>
-          {/* Trang nội bộ */}
+
+          {/* Recruiter Routes */}
           <Route element={<DashboardLayout />}>
-            {/* Recruiter */}
-            <Route
-              path="/recruiter/dashboard"
-              element={<RecruiterDashboard />}
-            />
+            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
             <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
+            <Route path="/recruiter/candidates" element={<RecruiterCandidates />} />
+            <Route path="/recruiter/probation" element={<Probation />} />
+            <Route path="/recruiter/reports" element={<Reports />} />
           </Route>
+
+          {/* Manager Routes */}
           <Route
             path="/manager"
             element={
@@ -55,11 +65,16 @@ function App() {
             <Route path="reviews" element={<Reviews />} />
           </Route>
 
+          {/* Director Routes */}
           <Route element={<DashboardLayout />}>
-            {/* Trang dashboard của Recruiter */}
-            <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
             <Route path="/director/dashboard" element={<DirectorDashboard />} />
             <Route path="/director/approvals" element={<DirectorApprovals />} />
+            <Route path="/director/reports" element={<DirectorReports />} />
+          </Route>
+
+          {/* Probationer Routes */}
+          <Route element={<DashboardLayout />}>
+            <Route path="/probationer/dashboard" element={<ProbationerDashboard />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

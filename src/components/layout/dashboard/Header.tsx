@@ -12,18 +12,9 @@ const DashboardHeader: React.FC = () => {
   const profileRef = useClickOutside<HTMLDivElement>(() => setIsProfileOpen(false));
 
   return (
-    <header className="h-18 bg-white/60 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 flex items-center justify-between px-8 shadow-sm">
-      {/* LEFT */}
-      <Link
-        to="/"
-        className="flex items-center gap-2.5 group duration-300"
-      >
-        <img
-          src={logo}
-          alt="Logo"
-          className="w-auto h-19 object-contain"
-        />
-      </Link>
+    <header className="h-18 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 flex items-center justify-between px-8 shadow-sm">
+      {/* LEFT - Empty or Breadcrumbs can go here */}
+      <div className="flex-1"></div>
 
       {/* RIGHT */}
       <div className="flex items-center justify-between gap-4">
