@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Briefcase, Users, Calendar, Clock, CheckCircle2 } from "lucide-react";
 import {
   LineChart,
@@ -8,6 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { applicationService, interviewService, jobService } from "@/services";
+import type { Application, Interview, Job } from "@/types";
 /** Kiểu dữ liệu hiển thị lịch phỏng vấn trong ngày (Dashboard widget) */
 interface DailyInterviewItem {
   id: number;
@@ -24,48 +27,62 @@ interface CandidateFlowData {
   candidates: number;
 }
 
-const data: CandidateFlowData[] = [
-  { name: "Mon", candidates: 12 },
-  { name: "Tue", candidates: 19 },
-  { name: "Wed", candidates: 15 },
-  { name: "Thu", candidates: 22 },
-  { name: "Fri", candidates: 28 },
-  { name: "Sat", candidates: 10 },
-  { name: "Sun", candidates: 14 },
-];
-
-const interviews: DailyInterviewItem[] = [
-  {
-    id: 1,
-    candidate: "Nguyen Van A",
-    position: "Frontend Developer",
-    time: "09:00 AM",
-    status: "done",
-  },
-  {
-    id: 2,
-    candidate: "Tran Thi B",
-    position: "UI/UX Designer",
-    time: "10:30 AM",
-    status: "upcoming",
-  },
-  {
-    id: 3,
-    candidate: "Le Van C",
-    position: "Backend Developer",
-    time: "02:00 PM",
-    status: "upcoming",
-  },
-  {
-    id: 4,
-    candidate: "Pham Thi D",
-    position: "Project Manager",
-    time: "04:00 PM",
-    status: "upcoming",
-  },
-];
-
 function Dashboard() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [interviews, setInterviews] = useState<DailyInterviewItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    Promise.all([
+      jobService.getJobs(),
+      applicationService.getApplications(),
+      interviewService.getInterviews(),
+    ])
+      .then(([jobList, applicationList, interviewList]) => {
+        setJobs(jobList);
+        setApplications(applicationList);
+        setInterviews(
+          interviewList.slice(0, 5).map((interview: Interview) => ({
+            id: Number(interview.id),
+            candidate: interview.candidateName,
+            position: interview.jobTitle,
+            time: new Date(interview.scheduledAt).toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            status: interview.status === "done" ? "done" : "upcoming",
+          }))
+        );
+      })
+      .catch(() => setError("Không thể tải dữ liệu dashboard."))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const data = useMemo<CandidateFlowData[]>(() => {
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - index));
+      return date;
+    });
+
+    return days.map((date) => {
+      const key = date.toDateString();
+      return {
+        name: date.toLocaleDateString("vi-VN", { weekday: "short" }),
+        candidates: applications.filter(
+          (application) => new Date(application.appliedAt).toDateString() === key
+        ).length,
+      };
+    });
+  }, [applications]);
+
+  const openJobs = jobs.filter((job) => job.status === "published").length;
+  const todayApplications = applications.filter(
+    (application) => new Date(application.appliedAt).toDateString() === new Date().toDateString()
+  ).length;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -74,6 +91,18 @@ function Dashboard() {
           Dashboard Overview
         </h1>
       </div>
+
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+          {error}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500 dark:bg-slate-900 dark:border-slate-800">
+          Đang tải dashboard...
+        </div>
+      )}
 
       {/* Metric Cards - 3 columns */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -84,7 +113,7 @@ function Dashboard() {
               Tổng số Việc làm đang mở
             </p>
             <p className="mt-2 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-              24
+              {openJobs}
             </p>
           </div>
           <Briefcase className="absolute -bottom-4 -right-2 h-24 w-24 text-gray-300 opacity-50 dark:text-slate-800" />
@@ -98,7 +127,7 @@ function Dashboard() {
             </p>
             <div className="flex items-baseline gap-2 mt-2">
               <p className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                18
+                {todayApplications}
               </p>
               <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full dark:bg-emerald-500/20 dark:text-emerald-400">
                 +12%
@@ -115,7 +144,7 @@ function Dashboard() {
               Lịch phỏng vấn sắp tới
             </p>
             <p className="mt-2 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-              5
+              {interviews.filter((interview) => interview.status === "upcoming").length}
             </p>
           </div>
           <Calendar className="absolute -bottom-4 -right-2 h-24 w-24 text-gray-300 opacity-50 dark:text-slate-800" />

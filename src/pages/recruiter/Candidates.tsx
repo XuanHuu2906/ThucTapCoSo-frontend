@@ -1,34 +1,30 @@
-import { useState } from "react";
-import { 
-    Search, Mail, Phone, Calendar, FileText, 
-    CheckCircle2, ChevronDown, ListFilter, LayoutGrid, 
-    List, X, Clock, MapPin, User, ChevronRight, 
-    DollarSign, Briefcase
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import {
+    Search, Mail, Phone, Calendar, FileText,
+    CheckCircle2, ChevronDown, ListFilter, LayoutGrid,
+    List, X, Clock, MapPin, User,
+    DollarSign
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { applicationService, interviewService } from "@/services";
+import type { Application, ApplicationStatus, InterviewRound } from "@/types";
+import { CANDIDATE_STATUS_COLORS, CANDIDATE_STATUS_LABELS, CANDIDATE_STATUS_TABS } from "@/lib/constants";
+import { formatDate } from "@/utils/date";
+import { downloadFile } from "@/utils/file";
 
-// Mock Data
-const MOCK_CANDIDATES = [
-    { id: 1, name: "Nguyễn Văn A", title: "Senior React Developer", email: "nva@gmail.com", phone: "0912345678", appliedAt: "2026-04-15", status: "Mới" },
-    { id: 2, name: "Trần Thị B", title: "UX/UI Designer", email: "ttb@gmail.com", phone: "0987654321", appliedAt: "2026-04-14", status: "Đã chọn" },
-    { id: 3, name: "Lê Văn C", title: "Product Manager", email: "lvc@gmail.com", phone: "0901234567", appliedAt: "2026-04-13", status: "Qua PV" },
-    { id: 4, name: "Phạm Thị D", title: "Senior React Developer", email: "ptd@gmail.com", phone: "0911223344", appliedAt: "2026-04-12", status: "Hẹn PV" },
-    { id: 5, name: "Hoàng Văn E", title: "Backend Engineer", email: "hve@gmail.com", phone: "0922334455", appliedAt: "2026-04-10", status: "Chờ offer" },
-    { id: 6, name: "Vũ Thị F", title: "Frontend Developer", email: "vtf@gmail.com", phone: "0933445566", appliedAt: "2026-04-09", status: "Đã tuyển" },
-    { id: 7, name: "Đặng Văn G", title: "QA Engineer", email: "dvg@gmail.com", phone: "0944556677", appliedAt: "2026-04-08", status: "Đã loại" },
-];
-
-const POSITIONS = ["Tất cả vị trí", "Senior React Developer", "UX/UI Designer", "Product Manager", "Backend Engineer", "Frontend Developer", "QA Engineer"];
-const STATUS_TABS = ["Tất cả", "Mới", "Đã chọn", "Đã tuyển", "Đã loại"];
-
-const STATUS_COLORS: Record<string, { bg: string, text: string, ring: string }> = {
-    "Mới": { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-700 dark:text-blue-400", ring: "ring-blue-600/20 dark:ring-blue-500/20" },
-    "Đã chọn": { bg: "bg-indigo-50 dark:bg-indigo-500/10", text: "text-indigo-700 dark:text-indigo-400", ring: "ring-indigo-600/20 dark:ring-indigo-500/20" },
-    "Qua PV": { bg: "bg-emerald-50 dark:bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400", ring: "ring-emerald-600/20 dark:ring-emerald-500/20" },
-    "Hẹn PV": { bg: "bg-purple-50 dark:bg-purple-500/10", text: "text-purple-700 dark:text-purple-400", ring: "ring-purple-600/20 dark:ring-purple-500/20" },
-    "Chờ offer": { bg: "bg-amber-50 dark:bg-amber-500/10", text: "text-amber-700 dark:text-amber-400", ring: "ring-amber-600/20 dark:ring-amber-500/20" },
-    "Đã tuyển": { bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-700 dark:text-slate-200", ring: "ring-slate-400/20 dark:ring-slate-500/20" },
-    "Đã loại": { bg: "bg-rose-50 dark:bg-rose-500/10", text: "text-rose-700 dark:text-rose-400", ring: "ring-rose-600/20 dark:ring-rose-500/20" },
+type CandidateCard = {
+    id: string;
+    applicationId: string;
+    name: string;
+    title: string;
+    email: string;
+    phone: string;
+    appliedAt: string;
+    status: string;
+    rawStatus: ApplicationStatus;
+    cvUrl: string;
+    jobId: string;
 };
 
 export default function Candidates() {
@@ -36,22 +32,104 @@ export default function Candidates() {
     const [searchQuery, setSearchQuery] = useState("");
     const [positionFilter, setPositionFilter] = useState("Tất cả vị trí");
     const [viewMode, setViewMode] = useState<"card" | "table">("card");
-    const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
-    
-    const [modalMode, setModalMode] = useState<"none" | "cv" | "interview" | "offer">("none");
+    const [candidates, setCandidates] = useState<CandidateCard[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [selectedCandidate, setSelectedCandidate] = useState<CandidateCard | null>(null);
 
-    const openModal = (candidate: any, mode: "cv" | "interview" | "offer") => {
+    const [modalMode, setModalMode] = useState<"none" | "cv" | "interview" | "offer">("none");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [interviewForm, setInterviewForm] = useState({
+        id: "", // Lưu interviewId nếu là sửa
+        date: "",
+        time: "",
+        location: "",
+        interviewerId: "2",
+        round: "technical" as InterviewRound,
+    });
+
+    useEffect(() => {
+        applicationService
+            .getApplications()
+            .then((applications: Application[]) =>
+                setCandidates(
+                    applications.map((application) => ({
+                        id: application.candidateId,
+                        applicationId: application.id,
+                        name: application.candidateName,
+                        title: application.jobTitle,
+                        email: application.candidateEmail,
+                        phone: application.candidatePhone,
+                        appliedAt: formatDate(application.appliedAt),
+                        status: CANDIDATE_STATUS_LABELS[application.status],
+                        rawStatus: application.status,
+                        cvUrl: application.cvUrl,
+                        jobId: application.jobId,
+                    }))
+                )
+            )
+            .catch(() => setError("Không thể tải danh sách ứng viên."))
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    const positions = useMemo(
+        () => ["Tất cả vị trí", ...Array.from(new Set(candidates.map((candidate) => candidate.title)))],
+        [candidates]
+    );
+
+    const openModal = async (candidate: CandidateCard, mode: "cv" | "interview" | "offer") => {
         setSelectedCandidate(candidate);
         setModalMode(mode);
+
+        // Nếu là phỏng vấn và đã có lịch thì lấy dữ liệu cũ
+        if (mode === "interview" && candidate.rawStatus === "interviewing") {
+            try {
+                // Lấy danh sách phỏng vấn của ứng viên này (thường chỉ có 1 cuộc phỏng vấn active)
+                const interviews = await interviewService.getInterviews({ candidateId: candidate.applicationId });
+                if (interviews.length > 0) {
+                    const latest = interviews[0];
+                    const dateObj = new Date(latest.scheduledAt);
+                    
+                    // Lấy các thành phần ngày giờ địa phương
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    const hours = String(dateObj.getHours()).padStart(2, '0');
+                    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+                    setInterviewForm({
+                        id: latest.id,
+                        date: `${year}-${month}-${day}`,
+                        time: `${hours}:${minutes}`,
+                        location: latest.location || "",
+                        interviewerId: latest.interviewerIds[0] || "2",
+                        round: latest.round,
+                    });
+                }
+            } catch (error) {
+                console.error("Lỗi khi lấy lịch phỏng vấn:", error);
+            }
+        }
     };
 
     const closeModal = () => {
         setModalMode("none");
         setSelectedCandidate(null);
+        setShowSuccess(false);
+        // Reset form dữ liệu phỏng vấn
+        setInterviewForm({
+            id: "",
+            date: "",
+            time: "",
+            location: "",
+            interviewerId: "2",
+            round: "technical",
+        });
     };
 
     // Filter Data
-    const filteredCandidates = MOCK_CANDIDATES.filter((candidate) => {
+    const filteredCandidates = candidates.filter((candidate) => {
         const matchesSearch =
             candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             candidate.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -68,11 +146,11 @@ export default function Candidates() {
     });
 
     const getTabCount = (tab: string) => {
-        if (tab === "Tất cả") return MOCK_CANDIDATES.length;
-        if (tab === "Mới") return MOCK_CANDIDATES.filter(c => c.status === "Mới").length;
-        if (tab === "Đã chọn") return MOCK_CANDIDATES.filter(c => ["Đã chọn", "Qua PV", "Hẹn PV", "Chờ offer"].includes(c.status)).length;
-        if (tab === "Đã tuyển") return MOCK_CANDIDATES.filter(c => c.status === "Đã tuyển").length;
-        if (tab === "Đã loại") return MOCK_CANDIDATES.filter(c => c.status === "Đã loại").length;
+        if (tab === "Tất cả") return candidates.length;
+        if (tab === "Mới") return candidates.filter(c => c.status === "Mới").length;
+        if (tab === "Đã chọn") return candidates.filter(c => ["Đã chọn", "Qua PV", "Hẹn PV", "Chờ offer"].includes(c.status)).length;
+        if (tab === "Đã tuyển") return candidates.filter(c => c.status === "Đã tuyển").length;
+        if (tab === "Đã loại") return candidates.filter(c => c.status === "Đã loại").length;
         return 0;
     };
 
@@ -91,6 +169,85 @@ export default function Candidates() {
         ];
         const total = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         return colors[total % colors.length];
+    };
+
+    const handleDownload = async (url: string, name: string) => {
+        const safeName = name.trim().replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_");
+        await downloadFile(url, `CV_${safeName}.pdf`);
+    };
+
+    const handleUpdateStatus = async (appId: string, newStatus: ApplicationStatus) => {
+        try {
+            const updatedApp = await applicationService.updateStatus(appId, { status: newStatus });
+            
+            // Cập nhật lại state candidates để giao diện thay đổi ngay lập tức
+            setCandidates(prev => prev.map(c => 
+                c.applicationId === appId 
+                ? { ...c, status: CANDIDATE_STATUS_LABELS[updatedApp.status], rawStatus: updatedApp.status }
+                : c
+            ));
+            
+            // Nếu đang mở modal thì đóng lại
+            if (selectedCandidate?.applicationId === appId) {
+                closeModal();
+            }
+            toast.success("Đã cập nhật trạng thái ứng viên.");
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Không thể cập nhật trạng thái.";
+            toast.error(message);
+        }
+    };
+
+    const handleScheduleInterview = async () => {
+        if (!selectedCandidate) return;
+        
+        setIsSubmitting(true);
+        try {
+            // Tạo đối tượng Date từ input (mặc định là giờ địa phương)
+            const localDate = new Date(`${interviewForm.date}T${interviewForm.time}`);
+            const scheduledAt = localDate.toISOString();
+            
+            if (interviewForm.id) {
+                // Cập nhật lịch cũ
+                await interviewService.updateInterview(interviewForm.id, {
+                    scheduledAt,
+                    location: interviewForm.location,
+                    // Lưu ý: service hiện tại chỉ hỗ trợ update ngày và location
+                });
+            } else {
+                // Tạo lịch mới
+                await interviewService.scheduleInterview({
+                    applicationId: selectedCandidate.applicationId,
+                    candidateId: selectedCandidate.id,
+                    jobId: selectedCandidate.jobId,
+                    interviewerIds: [interviewForm.interviewerId],
+                    scheduledAt,
+                    location: interviewForm.location,
+                    round: interviewForm.round,
+                    mode: interviewForm.location.toLowerCase().includes("meet") ? "online" : "offline",
+                    durationMinutes: 60,
+                });
+            }
+
+            // Cập nhật trạng thái ứng viên trong danh sách
+            if (!interviewForm.id) {
+                setCandidates(prev => prev.map(c => 
+                    c.applicationId === selectedCandidate.applicationId 
+                    ? { ...c, status: CANDIDATE_STATUS_LABELS["interviewing"], rawStatus: "interviewing" }
+                    : c
+                ));
+            }
+
+            setShowSuccess(true);
+            setTimeout(() => {
+                closeModal();
+            }, 2000);
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Không thể lưu lịch phỏng vấn.";
+            toast.error(message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -123,10 +280,22 @@ export default function Candidates() {
             </div>
 
             {/* Filters Toolbar */}
+            {error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+                    {error}
+                </div>
+            )}
+
+            {isLoading && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500 dark:bg-slate-900 dark:border-slate-800">
+                    Đang tải hồ sơ ứng viên...
+                </div>
+            )}
+
             <div className="flex flex-col gap-4">
                 <div className="flex overflow-x-auto pb-1 hide-scrollbar">
                     <nav className="flex space-x-2">
-                        {STATUS_TABS.map((tab) => (
+                        {CANDIDATE_STATUS_TABS.map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -168,7 +337,7 @@ export default function Candidates() {
                             onChange={(e) => setPositionFilter(e.target.value)}
                             className="w-full sm:w-64 appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-10 text-sm outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
                         >
-                            {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                            {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                     </div>
@@ -192,9 +361,9 @@ export default function Candidates() {
                                 </div>
                                 <span className={cn(
                                     "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset uppercase tracking-widest",
-                                    STATUS_COLORS[candidate.status]?.bg || "bg-slate-50",
-                                    STATUS_COLORS[candidate.status]?.text || "text-slate-700",
-                                    STATUS_COLORS[candidate.status]?.ring || "ring-slate-600/20"
+                                    CANDIDATE_STATUS_COLORS[candidate.status]?.bg || "bg-slate-50",
+                                    CANDIDATE_STATUS_COLORS[candidate.status]?.text || "text-slate-700",
+                                    CANDIDATE_STATUS_COLORS[candidate.status]?.ring || "ring-slate-600/20"
                                 )}>
                                     {candidate.status}
                                 </span>
@@ -214,15 +383,25 @@ export default function Candidates() {
                                     <FileText size={14} /> CV
                                 </button>
                                 
-                                {candidate.status === "Mới" && (
+                                {candidate.rawStatus === "new" && (
                                     <>
-                                        <button className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition-all active:scale-95">Duyệt</button>
-                                        <button className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-2 text-xs font-bold dark:bg-rose-500/10 transition-all active:scale-95">Loại</button>
+                                        <button 
+                                            onClick={() => handleUpdateStatus(candidate.applicationId, "shortlisted")}
+                                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition-all active:scale-95"
+                                        >
+                                            Duyệt
+                                        </button>
+                                        <button 
+                                            onClick={() => handleUpdateStatus(candidate.applicationId, "rejected")}
+                                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-2 text-xs font-bold dark:bg-rose-500/10 transition-all active:scale-95"
+                                        >
+                                            Loại
+                                        </button>
                                     </>
                                 )}
-                                
+
                                 {["Đã chọn", "Hẹn PV"].includes(candidate.status) && (
-                                    <button 
+                                    <button
                                         onClick={() => openModal(candidate, "interview")}
                                         className="flex-[2] inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition-all active:scale-95"
                                     >
@@ -231,7 +410,7 @@ export default function Candidates() {
                                 )}
 
                                 {candidate.status === "Qua PV" && (
-                                    <button 
+                                    <button
                                         onClick={() => openModal(candidate, "offer")}
                                         className="flex-[2] inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 transition-all active:scale-95"
                                     >
@@ -276,15 +455,37 @@ export default function Candidates() {
                                         <td className="px-6 py-4">
                                             <span className={cn(
                                                 "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset uppercase tracking-widest",
-                                                STATUS_COLORS[candidate.status]?.bg || "bg-slate-50",
-                                                STATUS_COLORS[candidate.status]?.text || "text-slate-700"
+                                                CANDIDATE_STATUS_COLORS[candidate.status]?.bg || "bg-slate-50",
+                                                CANDIDATE_STATUS_COLORS[candidate.status]?.text || "text-slate-700"
                                             )}>{candidate.status}</span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button 
-                                                onClick={() => openModal(candidate, "cv")}
-                                                className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-500/10 transition-all active:scale-95"
-                                            >Chi tiết</button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button 
+                                                    onClick={() => openModal(candidate, "cv")}
+                                                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-500/10 transition-all active:scale-95"
+                                                >
+                                                    Chi tiết
+                                                </button>
+                                                {candidate.rawStatus === "new" && (
+                                                    <>
+                                                        <button 
+                                                            onClick={() => handleUpdateStatus(candidate.applicationId, "shortlisted")}
+                                                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all"
+                                                            title="Duyệt hồ sơ"
+                                                        >
+                                                            <CheckCircle2 size={18} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleUpdateStatus(candidate.applicationId, "rejected")}
+                                                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                                                            title="Loại hồ sơ"
+                                                        >
+                                                            <X size={18} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -299,20 +500,30 @@ export default function Candidates() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in transition-all">
                     <div className="w-full max-w-xl rounded-3xl bg-white shadow-2xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-800 animate-in zoom-in-95 duration-200 overflow-hidden">
                         
-                        {/* Header */}
-                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50">
-                            <div className="flex items-center gap-4">
-                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold ${getAvatarColor(selectedCandidate.name)}`}>{getInitials(selectedCandidate.name)}</div>
-                                <div>
-                                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-50">{selectedCandidate.name}</h2>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">{selectedCandidate.title}</p>
+                        {showSuccess ? (
+                            <div className="p-12 text-center space-y-4">
+                                <div className="mx-auto w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center">
+                                    <CheckCircle2 size={32} />
                                 </div>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Đặt lịch thành công!</h2>
+                                <p className="text-slate-500 dark:text-slate-400">Thông báo phỏng vấn đã được gửi tới ứng viên và người phỏng vấn.</p>
                             </div>
-                            <button onClick={closeModal} className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors"><X size={20} className="text-slate-400" /></button>
-                        </div>
+                        ) : (
+                            <>
+                                {/* Header */}
+                                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold ${getAvatarColor(selectedCandidate.name)}`}>{getInitials(selectedCandidate.name)}</div>
+                                        <div>
+                                            <h2 className="text-base font-bold text-slate-900 dark:text-slate-50">{selectedCandidate.name}</h2>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{selectedCandidate.title}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={closeModal} className="p-2 rounded-full hover:bg-white dark:hover:bg-slate-700 transition-colors"><X size={20} className="text-slate-400" /></button>
+                                </div>
 
-                        {/* Body Selection */}
-                        <div className="p-6">
+                                {/* Body Selection */}
+                                <div className="p-6">
                             {modalMode === "cv" && (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
@@ -325,10 +536,49 @@ export default function Candidates() {
                                             <p className="text-sm font-semibold">{selectedCandidate.phone}</p>
                                         </div>
                                     </div>
-                                    <div className="p-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center py-10 gap-3">
-                                        <FileText size={40} className="text-slate-300" />
-                                        <p className="text-sm font-bold text-slate-400 italic">Preveiw_CV_{selectedCandidate.name.replace(/ /g, "_")}.pdf</p>
-                                        <button className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all">Mở file CV</button>
+
+                                    {selectedCandidate.cvUrl && (
+                                        <div className="flex gap-3 px-1">
+                                            <a
+                                                href={selectedCandidate.cvUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
+                                            >
+                                                🔍 Xem CV toàn màn hình
+                                            </a>
+                                            <button
+                                                onClick={() => handleDownload(selectedCandidate.cvUrl, selectedCandidate.name)}
+                                                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 transition-all shadow-sm"
+                                            >
+                                                ⬇️ Tải xuống
+                                            </button>
+                                        </div>
+                                    )}
+                                    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 h-[500px] relative group">
+                                        {selectedCandidate.cvUrl ? (
+                                            <iframe
+                                                src={selectedCandidate.cvUrl}
+                                                className="w-full h-full border-none"
+                                                title={`CV - ${selectedCandidate.name}`}
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center h-full gap-3">
+                                                <FileText size={40} className="text-slate-300" />
+                                                <p className="text-sm font-bold text-slate-400">Ứng viên chưa tải lên CV</p>
+                                            </div>
+                                        )}
+                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <a
+                                                href={selectedCandidate.cvUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="bg-white/90 backdrop-blur shadow-sm p-2 rounded-lg text-slate-700 hover:text-blue-600 transition-colors block"
+                                                title="Mở trong tab mới"
+                                            >
+                                                <FileText size={18} />
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -340,11 +590,21 @@ export default function Candidates() {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="relative">
                                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input type="date" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
+                                                <input 
+                                                    type="date" 
+                                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" 
+                                                    value={interviewForm.date}
+                                                    onChange={e => setInterviewForm(prev => ({ ...prev, date: e.target.value }))}
+                                                />
                                             </div>
                                             <div className="relative">
                                                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input type="time" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
+                                                <input 
+                                                    type="time" 
+                                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" 
+                                                    value={interviewForm.time}
+                                                    onChange={e => setInterviewForm(prev => ({ ...prev, time: e.target.value }))}
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -352,16 +612,26 @@ export default function Candidates() {
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Địa điểm / Link họp</label>
                                         <div className="relative">
                                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                            <input type="text" placeholder="VD: Phòng 302 hoặc Link Google Meet" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="VD: Phòng 302 hoặc Link Google Meet" 
+                                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" 
+                                                value={interviewForm.location}
+                                                onChange={e => setInterviewForm(prev => ({ ...prev, location: e.target.value }))}
+                                            />
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Người phỏng vấn (Manager)</label>
                                         <div className="relative">
                                             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                            <select className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none">
-                                                <option>Trần Thị B (HM - Engineering)</option>
-                                                <option>Nguyễn Văn X (Lead - UI/UX)</option>
+                                            <select 
+                                                className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
+                                                value={interviewForm.interviewerId}
+                                                onChange={e => setInterviewForm(prev => ({ ...prev, interviewerId: e.target.value }))}
+                                            >
+                                                <option value="2">Trần Thị B (HM - Engineering)</option>
+                                                <option value="3">Nguyễn Văn X (Lead - UI/UX)</option>
                                             </select>
                                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                                         </div>
@@ -401,12 +671,20 @@ export default function Candidates() {
                         <div className="bg-slate-50 dark:bg-slate-800 px-6 py-4 flex items-center justify-end gap-3">
                             <button onClick={closeModal} className="px-5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-white dark:hover:bg-slate-700 transition-all">Đóng</button>
                             {modalMode === "interview" && (
-                                <button onClick={closeModal} className="px-6 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-all active:scale-95">Xác nhận lịch</button>
+                                <button 
+                                    onClick={handleScheduleInterview} 
+                                    disabled={isSubmitting || !interviewForm.date || !interviewForm.time}
+                                    className="px-6 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                    {isSubmitting ? "Đang xử lý..." : "Xác nhận lịch"}
+                                </button>
                             )}
                             {modalMode === "offer" && (
                                 <button onClick={closeModal} className="px-6 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-500 transition-all active:scale-95">Gửi đề xuất Offer</button>
                             )}
                         </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

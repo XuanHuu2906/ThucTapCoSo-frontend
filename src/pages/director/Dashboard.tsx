@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -8,6 +9,8 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
+import { applicationService, offerService, probationService } from "@/services";
+import type { Application, Offer, Probationer } from "@/types";
 
 // Kiểu dữ liệu cho thẻ thống kê đầu trang
 type StatCardProps = {
@@ -119,6 +122,49 @@ function HorizontalBar({ label, value }: HorizontalBarProps) {
 
 // Component chính: Dashboard dành cho Director
 export default function DirectorDashboard() {
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [probations, setProbations] = useState<Probationer[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      offerService.getOffers(),
+      probationService.getProbationers(),
+      applicationService.getApplications(),
+    ])
+      .then(([offerList, probationList, applicationList]) => {
+        setOffers(offerList);
+        setProbations(probationList);
+        setApplications(applicationList);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const pendingOffers = offers.filter((offer) => offer.status === "pending_approval");
+  const pendingProbations = probations.filter(
+    (probation) => probation.status === "pending_evaluation"
+  );
+  const hiredThisMonth = applications.filter((application) => {
+    const appliedDate = new Date(application.appliedAt);
+    const now = new Date();
+    return (
+      application.status === "hired" &&
+      appliedDate.getMonth() === now.getMonth() &&
+      appliedDate.getFullYear() === now.getFullYear()
+    );
+  }).length;
+  const departments = useMemo(() => {
+    const counts = probations.reduce<Record<string, number>>((acc, probation) => {
+      if (probation.department) acc[probation.department] = (acc[probation.department] ?? 0) + 1;
+      return acc;
+    }, {});
+    const max = Math.max(...Object.values(counts), 1);
+    return Object.entries(counts).map(([label, count]) => ({
+      label,
+      value: Math.max(10, Math.round((count / max) * 100)),
+    }));
+  }, [probations]);
+
   return (
     <div className="min-h-screen bg-zinc-50 p-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -136,26 +182,26 @@ export default function DirectorDashboard() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
             title="Offer chờ duyệt"
-            value="08"
-            note="3 hồ sơ cần xử lý hôm nay"
+            value={String(pendingOffers.length).padStart(2, "0")}
+            note="Hồ sơ cần xử lý"
             icon={<FileCheck2 className="h-5 w-5" />}
           />
           <StatCard
             title="Thử việc chờ duyệt"
-            value="05"
-            note="2 hồ sơ sắp hết hạn đánh giá"
+            value={String(pendingProbations.length).padStart(2, "0")}
+            note="Hồ sơ sắp hết hạn đánh giá"
             icon={<ShieldCheck className="h-5 w-5" />}
           />
           <StatCard
             title="Đã tuyển tháng này"
-            value="14"
-            note="Tăng 12% so với tháng trước"
+            value={String(hiredThisMonth).padStart(2, "0")}
+            note="Tính từ dữ liệu applications"
             icon={<CheckCircle2 className="h-5 w-5" />}
           />
           <StatCard
             title="Tổng nhân sự"
-            value="126"
-            note="Phân bổ tại 6 phòng ban"
+            value={String(probations.length)}
+            note="Nhân sự thử việc hiện có"
             icon={<Users className="h-5 w-5" />}
           />
         </div>
@@ -180,21 +226,14 @@ export default function DirectorDashboard() {
             </div>
 
             <div className="space-y-3">
-              <PendingItem
-                name="Nguyễn Minh Khang"
-                subtitle="Senior Frontend Developer • 32.000.000 VNĐ"
-                type="offer"
-              />
-              <PendingItem
-                name="Trần Gia Hân"
-                subtitle="Product Manager • 38.000.000 VNĐ"
-                type="offer"
-              />
-              <PendingItem
-                name="Lê Quốc Anh"
-                subtitle="UX/UI Designer • 24.000.000 VNĐ"
-                type="offer"
-              />
+              {pendingOffers.slice(0, 3).map((offer) => (
+                <PendingItem
+                  key={offer.id}
+                  name={offer.candidateName}
+                  subtitle={`${offer.jobTitle} • ${offer.baseSalary.toLocaleString("vi-VN")} ${offer.currency}`}
+                  type="offer"
+                />
+              ))}
             </div>
           </div>
 
@@ -216,21 +255,14 @@ export default function DirectorDashboard() {
             </div>
 
             <div className="space-y-3">
-              <PendingItem
-                name="Phạm Tuấn Vũ"
-                subtitle="Backend Developer • Đề xuất đạt thử việc"
-                type="probation"
-              />
-              <PendingItem
-                name="Ngô Khánh Linh"
-                subtitle="HR Executive • Chờ kết luận chính thức"
-                type="probation"
-              />
-              <PendingItem
-                name="Đỗ Thu Trang"
-                subtitle="Business Analyst • Mentor đã gửi nhận xét"
-                type="probation"
-              />
+              {pendingProbations.slice(0, 3).map((probation) => (
+                <PendingItem
+                  key={probation.id}
+                  name={probation.fullName}
+                  subtitle={`${probation.jobTitle} • Chờ kết luận chính thức`}
+                  type="probation"
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -267,11 +299,9 @@ export default function DirectorDashboard() {
             </div>
 
             <div className="space-y-5">
-              <HorizontalBar label="Engineering" value={82} />
-              <HorizontalBar label="Product" value={58} />
-              <HorizontalBar label="Human Resources" value={36} />
-              <HorizontalBar label="Marketing" value={44} />
-              <HorizontalBar label="Finance" value={27} />
+              {(departments.length > 0 ? departments : [{ label: "Chưa có dữ liệu", value: 0 }]).map((item) => (
+                <HorizontalBar key={item.label} label={item.label} value={item.value} />
+              ))}
             </div>
 
             <div className="mt-6 flex items-center gap-2 text-sm text-[#71717a]">

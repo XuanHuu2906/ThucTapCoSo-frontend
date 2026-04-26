@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BadgeCheck,
   Check,
@@ -8,6 +8,8 @@ import {
   FileText,
   ShieldCheck,
 } from "lucide-react";
+import { offerService, probationService } from "@/services";
+import { formatDate } from "@/utils/date";
 
 // Kiểu dữ liệu cho danh sách Offer chờ duyệt
 type OfferItem = {
@@ -31,68 +33,6 @@ type ProbationItem = {
   result: string;
 };
 
-// Dữ liệu giả lập cho tab Offer
-const offerData: OfferItem[] = [
-  {
-    id: 1,
-    candidate: "Nguyễn Minh Khang",
-    position: "Senior Frontend Developer",
-    department: "Engineering",
-    proposedSalary: "32.000.000 VNĐ",
-    recruiter: "Lan HR",
-    status: "Chờ duyệt",
-  },
-  {
-    id: 2,
-    candidate: "Trần Gia Hân",
-    position: "Product Manager",
-    department: "Product",
-    proposedSalary: "38.000.000 VNĐ",
-    recruiter: "Minh HR",
-    status: "Chờ duyệt",
-  },
-  {
-    id: 3,
-    candidate: "Lê Quốc Anh",
-    position: "UX/UI Designer",
-    department: "Design",
-    proposedSalary: "24.000.000 VNĐ",
-    recruiter: "Phương HR",
-    status: "Chờ duyệt",
-  },
-];
-
-// Dữ liệu giả lập cho tab Probation
-const probationData: ProbationItem[] = [
-  {
-    id: 1,
-    employee: "Phạm Tuấn Vũ",
-    position: "Backend Developer",
-    department: "Engineering",
-    endDate: "29/04/2026",
-    managerRecommendation: "Đạt",
-    result: "Chờ phê duyệt",
-  },
-  {
-    id: 2,
-    employee: "Ngô Khánh Linh",
-    position: "HR Executive",
-    department: "Human Resources",
-    endDate: "02/05/2026",
-    managerRecommendation: "Đạt",
-    result: "Chờ phê duyệt",
-  },
-  {
-    id: 3,
-    employee: "Đỗ Thu Trang",
-    position: "Business Analyst",
-    department: "Product",
-    endDate: "06/05/2026",
-    managerRecommendation: "Cần xem xét",
-    result: "Chờ phê duyệt",
-  },
-];
-
 // Chỉ định tab đang hoạt động
 type TabKey = "offers" | "probation";
 
@@ -100,14 +40,49 @@ type TabKey = "offers" | "probation";
 export default function Approvals() {
   // State lưu tab hiện tại
   const [activeTab, setActiveTab] = useState<TabKey>("offers");
+  const [offerData, setOfferData] = useState<OfferItem[]>([]);
+  const [probationData, setProbationData] = useState<ProbationItem[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    Promise.all([offerService.getOffers(), probationService.getProbationers()])
+      .then(([offers, probations]) => {
+        setOfferData(
+          offers
+            .filter((offer) => offer.status === "pending_approval")
+            .map((offer) => ({
+              id: Number(offer.id),
+              candidate: offer.candidateName,
+              position: offer.jobTitle,
+              department: "",
+              proposedSalary: `${offer.baseSalary.toLocaleString("vi-VN")} ${offer.currency}`,
+              recruiter: offer.createdBy,
+              status: "Chờ duyệt",
+            }))
+        );
+
+        setProbationData(
+          probations
+            .filter((probation) => probation.status === "pending_evaluation")
+            .map((probation) => ({
+              id: Number(probation.id),
+              employee: probation.fullName,
+              position: probation.jobTitle,
+              department: probation.department,
+              endDate: formatDate(probation.endDate),
+              managerRecommendation: "Đạt",
+              result: "Chờ phê duyệt",
+            }))
+        );
+      })
+      .catch(() => setError("Không thể tải dữ liệu phê duyệt."));
+  }, []);
 
   // Tính nhanh số lượng item cho từng nhóm
-  const summary = useMemo(() => {
-    return {
-      offers: offerData.length,
-      probation: probationData.length,
-    };
-  }, []);
+  const summary = {
+    offers: offerData.length,
+    probation: probationData.length,
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 p-6 md:p-8">
@@ -121,6 +96,12 @@ export default function Approvals() {
             Phê duyệt đề xuất offer và kết quả thử việc trên cùng một màn hình
           </p>
         </div>
+
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* 2 ô tóm tắt đầu trang */}
         <div className="grid gap-4 md:grid-cols-2">

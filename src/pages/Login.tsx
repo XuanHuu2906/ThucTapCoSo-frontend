@@ -1,18 +1,36 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { BriefcaseBusiness, LockKeyhole, Mail, ArrowLeft, Send, Home } from "lucide-react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { LockKeyhole, Mail, ArrowLeft, Send } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { ROLE_DASHBOARD } from "@/routes/routes.config";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [view, setView] = useState<"login" | "forgot">("login");
   const [isSent, setIsSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (view === "login") {
-      navigate("/recruiter/dashboard");
+      setIsSubmitting(true);
+      setError("");
+
+      try {
+        const user = await login({ email, password });
+        const from = (location.state as { from?: { pathname?: string } } | null)?.from
+          ?.pathname;
+        navigate(from ?? ROLE_DASHBOARD[user.role], { replace: true });
+      } catch {
+        setError("Email hoặc mật khẩu không đúng. Vui lòng thử lại.");
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       setIsSent(true);
     }
@@ -58,6 +76,12 @@ export default function Login() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-2">
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  {error}
+                </div>
+              )}
+
               <div>
                 <label htmlFor="email" className="mb-2 block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Email</label>
                 <div className="relative">
@@ -104,9 +128,14 @@ export default function Login() {
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition hover:bg-blue-500 focus:outline-none active:scale-[0.98]"
               >
-                {view === "login" ? "Đăng nhập ngay" : "Gửi yêu cầu khôi phục"}
+                {isSubmitting
+                  ? "Đang đăng nhập..."
+                  : view === "login"
+                    ? "Đăng nhập ngay"
+                    : "Gửi yêu cầu khôi phục"}
               </button>
 
               {view === "forgot" && (

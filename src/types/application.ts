@@ -53,7 +53,7 @@ export interface SubmitApplicationPayload {
   fullName?: string;          // Họ và tên ứng viên
   email?: string;             // Email ứng viên (kiểm tra trùng lặp – REQ-006 AC-3)
   phone?: string;             // Số điện thoại ứng viên
-  cvUrl: string;              // Đường dẫn CV đã upload – PDF/DOC/DOCX <5MB (REQ-006 AC-2)
+  cvUrl: string | File;       // Đường dẫn CV (string) hoặc File object khi upload (REQ-006 AC-2)
   coverLetter?: string;       // Thư xin việc (không bắt buộc)
   source?: CandidateSource;   // Biết tin qua kênh nào (không bắt buộc)
 }

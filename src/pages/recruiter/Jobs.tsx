@@ -1,47 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Plus, Search, Edit, AlignLeft, Briefcase, MapPin,
-  DollarSign, X, Calendar, Users as UsersIcon,
-  CheckCircle2, AlertCircle, Clock, Trash2
+  Plus, Search, Edit, Briefcase,
+  X, Calendar, Users as UsersIcon,
+  AlertCircle, Clock
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import type { Job, JobStatus, JobType, ExperienceLevel } from "../../types/job";
-
-const MOCK_JOBS: Job[] = [
-  {
-    id: "1",
-    title: 'Senior Backend Developer',
-    department: 'Engineering',
-    location: 'Hà Nội',
-    type: 'full-time',
-    experienceLevel: 'senior',
-    salaryMin: 30000000,
-    salaryMax: 45000000,
-    currency: 'VND',
-    createdAt: '2026-04-10',
-    deadline: '2026-05-10',
-    status: 'published',
-    headcount: 2,
-    applicants: 12,
-    requirements: ["Node.js", "PostgreSQL", "AWS"],
-    description: "Xây dựng hệ thống backend hiệu năng cao..."
-  } as any, // Cast temporarily to avoid missing fields error in mock
-  {
-    id: "2",
-    title: 'UX/UI Designer',
-    department: 'Design',
-    location: 'HCM',
-    type: 'full-time',
-    experienceLevel: 'junior',
-    salaryMin: 20000000,
-    salaryMax: 35000000,
-    status: 'closed',
-    createdAt: '2026-04-12',
-    deadline: '2026-04-20',
-    applicants: 45,
-    requirements: ["Figma", "Adobe XD"]
-  } as any,
-];
+import type { Job, JobType, ExperienceLevel, JobPayload } from "../../types/job";
+import { applicationService, jobService } from "@/services";
+import { formatDate } from "@/utils/date";
 
 const JOB_TYPE_LABELS: Record<JobType, string> = {
   "full-time": "Toàn thời gian",
@@ -63,10 +29,139 @@ const EXP_LEVEL_LABELS: Record<ExperienceLevel, string> = {
 const RecruiterJobs: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS as any);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-  const handleCloseJob = (id: string) => {
+  const [formData, setFormData] = useState<Omit<JobPayload, "saveAsDraft">>({
+    title: "",
+    department: "",
+    location: "Hà Nội",
+    type: "full-time",
+    experienceLevel: "fresher",
+    description: "",
+    requirements: [],
+    salaryMin: 0,
+    salaryMax: 0,
+    headcount: 1,
+    deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  });
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      department: "",
+      location: "Hà Nội",
+      type: "full-time",
+      experienceLevel: "fresher",
+      description: "",
+      requirements: [],
+      salaryMin: 0,
+      salaryMax: 0,
+      headcount: 1,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    });
+  };
+
+  const loadJobs = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [jobList, applications] = await Promise.all([
+        jobService.getJobs(),
+        applicationService.getApplications(),
+      ]);
+      const applicantCount = applications.reduce<Record<string, number>>((acc, application) => {
+        acc[application.jobId] = (acc[application.jobId] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      setJobs(
+        jobList.map((job) => ({
+          ...job,
+          applicants: applicantCount[job.id] ?? 0,
+        }))
+      );
+    } catch {
+      setError("Không thể tải danh sách tin tuyển dụng.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateJob = async (saveAsDraft: boolean) => {
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      if (editingJobId) {
+        await jobService.updateJob(editingJobId, {
+          ...formData,
+          saveAsDraft,
+        });
+      } else {
+        await jobService.createJob({
+          ...formData,
+          saveAsDraft,
+        });
+      }
+      setShowCreateModal(false);
+      setEditingJobId(null);
+      resetForm();
+      await loadJobs();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Vui lòng kiểm tra lại thông tin.";
+      setError(`Không thể ${editingJobId ? "cập nhật" : "tạo"} tin tuyển dụng. ${msg}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadJobs();
+  }, []);
+
+  const handleReopenJob = async (id: string) => {
+    try {
+      await jobService.updateStatus(id, "published");
+      await loadJobs();
+    } catch {
+      setError("Không thể mở lại tin tuyển dụng.");
+    }
+  };
+
+  const handleCloseJob = async (id: string) => {
+    const previousJobs = jobs;
     setJobs(prev => prev.map(job => job.id === id ? { ...job, status: 'closed' } : job));
+
+    try {
+      await jobService.updateStatus(id, "closed");
+    } catch (err: any) {
+      setJobs(previousJobs);
+      const msg = err.response?.data?.message || "";
+      setError(`Không thể đóng tin tuyển dụng. ${msg}`);
+    }
+  };
+
+  const handleEdit = (job: Job) => {
+    setEditingJobId(job.id);
+    setFormData({
+      title: job.title,
+      department: job.department,
+      location: job.location,
+      type: job.type,
+      experienceLevel: job.experienceLevel,
+      description: job.description,
+      requirements: job.requirements,
+      salaryMin: job.salaryMin || 0,
+      salaryMax: job.salaryMax || 0,
+      headcount: job.headcount,
+      deadline: job.deadline.split('T')[0],
+    });
+    setShowCreateModal(true);
   };
 
   const filteredJobs = jobs.filter(job =>
@@ -96,6 +191,18 @@ const RecruiterJobs: React.FC = () => {
       </div>
 
       {/* Stats Summary */}
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+          {error}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-500 dark:bg-slate-900 dark:border-slate-800">
+          Đang tải dữ liệu tuyển dụng...
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-4">
           <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-blue-600">
@@ -171,7 +278,7 @@ const RecruiterJobs: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                       <Calendar size={14} className="text-slate-400" />
-                      {job.deadline}
+                      {formatDate(job.deadline)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -191,15 +298,31 @@ const RecruiterJobs: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-all">
-                        <Edit size={16} />
-                      </button>
+                      {job.status !== 'closed' && (
+                        <button
+                          onClick={() => handleEdit(job)}
+                          title="Sửa"
+                          className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-all"
+                        >
+                          <Edit size={16} />
+                        </button>
+                      )}
+                      
                       {job.status === 'published' && (
                         <button
                           onClick={() => handleCloseJob(job.id)}
                           title="Đóng tin"
                           className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-900/30 transition-all">
                           <AlertCircle size={16} />
+                        </button>
+                      )}
+
+                      {job.status === 'closed' && (
+                        <button
+                          onClick={() => handleReopenJob(job.id)}
+                          title="Mở lại"
+                          className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/30 transition-all">
+                          <Plus size={16} />
                         </button>
                       )}
                     </div>
@@ -219,10 +342,21 @@ const RecruiterJobs: React.FC = () => {
             {/* Modal Header */}
             <div className="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-8 py-5 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">Đăng tin tuyển dụng mới</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Hoàn thiện thông tin để thu hút ứng viên tiềm năng</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">
+                  {editingJobId ? "Chỉnh sửa tin tuyển dụng" : "Đăng tin tuyển dụng mới"}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {editingJobId ? "Cập nhật lại các thông tin cần thiết" : "Hoàn thiện thông tin để thu hút ứng viên tiềm năng"}
+                </p>
               </div>
-              <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setEditingJobId(null);
+                  resetForm();
+                }}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
                 <X size={20} className="text-slate-500" />
               </button>
             </div>
@@ -235,21 +369,43 @@ const RecruiterJobs: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tiêu đề vị trí</label>
-                    <input type="text" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder="VD: Senior React Developer" />
+                    <input
+                      type="text"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      placeholder="VD: Senior React Developer"
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      required
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phòng ban</label>
-                    <input type="text" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder="VD: Engineering" />
+                    <input
+                      type="text"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      placeholder="VD: Engineering"
+                      value={formData.department}
+                      onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                      required
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Hình thức làm việc</label>
-                    <select className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                    <select
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      value={formData.type}
+                      onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as JobType }))}
+                    >
                       {Object.entries(JOB_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Cấp độ kinh nghiệm</label>
-                    <select className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                    <select
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      value={formData.experienceLevel}
+                      onChange={(e) => setFormData(prev => ({ ...prev, experienceLevel: e.target.value as ExperienceLevel }))}
+                    >
                       {Object.entries(EXP_LEVEL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   </div>
@@ -262,15 +418,33 @@ const RecruiterJobs: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Lương tối thiểu (VND)</label>
-                    <input type="number" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" placeholder="VD: 15,000,000" />
+                    <input
+                      type="number"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
+                      placeholder="VD: 15,000,000"
+                      value={formData.salaryMin || ""}
+                      onChange={(e) => setFormData(prev => ({ ...prev, salaryMin: Number(e.target.value) }))}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Lương tối đa (VND)</label>
-                    <input type="number" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" placeholder="VD: 30,000,000" />
+                    <input
+                      type="number"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
+                      placeholder="VD: 30,000,000"
+                      value={formData.salaryMax || ""}
+                      onChange={(e) => setFormData(prev => ({ ...prev, salaryMax: Number(e.target.value) }))}
+                    />
                   </div>
                   <div className="space-y-1.5 relative">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Hạn nộp hồ sơ</label>
-                    <input type="date" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                    <input
+                      type="date"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      value={formData.deadline}
+                      onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                      required
+                    />
                   </div>
                 </div>
               </div>
@@ -279,11 +453,25 @@ const RecruiterJobs: React.FC = () => {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Mô tả công việc</label>
-                  <textarea rows={4} className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none" placeholder="Chi tiết trách nhiệm và công việc..." />
+                  <textarea
+                    rows={4}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                    placeholder="Chi tiết trách nhiệm và công việc..."
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Yêu cầu chuyên môn</label>
-                  <textarea rows={4} className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none" placeholder="VD: Tối thiểu 2 năm kinh nghiệm React, kỹ năng Git tốt..." />
+                  <textarea
+                    rows={4}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                    placeholder="VD: Tối thiểu 2 năm kinh nghiệm React, kỹ năng Git tốt... (Nhập mỗi yêu cầu trên một dòng)"
+                    value={formData.requirements.join('\n')}
+                    onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value.split('\n').filter(r => r.trim() !== '') }))}
+                    required
+                  />
                 </div>
               </div>
             </div>
@@ -291,24 +479,35 @@ const RecruiterJobs: React.FC = () => {
             {/* Modal Footer */}
             <div className="sticky bottom-0 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-8 py-5 flex items-center justify-end gap-4">
               <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">
+                type="button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setEditingJobId(null);
+                  resetForm();
+                }}
+                disabled={isSubmitting}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all disabled:opacity-50">
                 Hủy
               </button>
               <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-6 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-500 hover:text-blue-600 transition-all">
-                Lưu nháp
+                type="button"
+                onClick={() => handleCreateJob(true)}
+                disabled={isSubmitting}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-500 hover:text-blue-600 transition-all disabled:opacity-50">
+                {isSubmitting ? "Đang lưu..." : (editingJobId ? "Lưu thay đổi" : "Lưu nháp")}
               </button>
               <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-8 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 active:scale-95 transition-all">
-                Đăng tin công khai
+                type="button"
+                onClick={() => handleCreateJob(false)}
+                disabled={isSubmitting}
+                className="px-8 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 active:scale-95 transition-all disabled:opacity-50">
+                {isSubmitting ? "Đang xử lý..." : (editingJobId ? "Cập nhật & Đăng" : "Đăng tin công khai")}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

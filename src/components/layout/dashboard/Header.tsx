@@ -1,15 +1,32 @@
 import { Bell, LogOut } from "lucide-react";
 import React, { useState } from "react";
 import ThemeToggle from "../../ui/ThemeToggle";
-import { Link } from "react-router-dom";
-import logo from "../../../assets/images/Logo.png";
+import { useNavigate } from "react-router-dom";
 import useClickOutside from "../../../hooks/useClickOutside";
+import { useAuth } from "@/hooks/useAuth";
+import { ROLE_LABELS } from "@/lib/constants";
+import { ROUTES } from "@/routes/routes.config";
 
 const DashboardHeader: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
 
-  // Áp dụng Custom Hook để dọn dẹp logic
   const profileRef = useClickOutside<HTMLDivElement>(() => setIsProfileOpen(false));
+  const userName = user?.fullName ?? "Người dùng";
+  const roleLabel = user ? ROLE_LABELS[user.role] : "Người dùng";
+  const initials = userName
+    .split(" ")
+    .filter(Boolean)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    navigate(ROUTES.login, { replace: true });
+  };
 
   return (
     <header className="h-18 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 flex items-center justify-between px-8 shadow-sm">
@@ -36,14 +53,14 @@ const DashboardHeader: React.FC = () => {
           >
             <div className="text-right">
               <p className="text-sm font-semibold leading-tight text-slate-900 dark:text-slate-100">
-                Trần Thị B
+                {userName}
               </p>
               <p className="text-xs leading-tight text-slate-500 dark:text-slate-400">
-                Hiring Manager
+                {roleLabel}
               </p>
             </div>
             <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center text-blue-600 font-bold text-sm shadow-sm border border-slate-200 dark:border-slate-700">
-              TT
+              {initials}
             </div>
           </div>
 
@@ -52,12 +69,12 @@ const DashboardHeader: React.FC = () => {
             <div className="absolute right-0 mt-3 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 dark:border-slate-800 p-4 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
               <div className="flex items-start gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg bg-blue-50 dark:bg-slate-800/50 shadow-inner shrink-0">
-                  TT
+                  {initials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">Trần Thị B</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-0.5">Hiring Manager</p>
-                  <p className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate mt-1">Phòng Nhân sự</p>
+                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">{userName}</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-0.5">{roleLabel}</p>
+                  <p className="text-xs font-medium text-slate-400 dark:text-slate-500 truncate mt-1">{user?.email}</p>
                 </div>
               </div>
 
@@ -65,7 +82,7 @@ const DashboardHeader: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-slate-500 dark:text-slate-400">Vai trò</span>
                   <span className="px-2.5 py-1 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 text-xs font-semibold rounded-full ring-1 ring-inset ring-blue-600/20 dark:ring-blue-500/20">
-                    Hiring Manager
+                    {roleLabel}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -80,7 +97,10 @@ const DashboardHeader: React.FC = () => {
               </div>
 
               <div className="pt-3">
-                <button className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-xl transition-colors">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-xl transition-colors"
+                >
                   <LogOut className="w-4 h-4" />
                   Đăng xuất
                 </button>

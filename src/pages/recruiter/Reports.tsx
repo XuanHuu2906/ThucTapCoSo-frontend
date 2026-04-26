@@ -1,16 +1,17 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { 
   BarChart3, TrendingUp, Users, Target, 
-  Download, Filter, Calendar, ArrowUpRight,
+  Download, Filter, ArrowUpRight,
   PieChart as PieChartIcon, Activity
 } from "lucide-react";
 import {
-  LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
   AreaChart, Area
 } from "recharts";
 import { cn } from "../../lib/utils";
+import { applicationService } from "@/services";
+import type { Application } from "@/types";
 
 const FUNNEL_DATA = [
   { name: 'Ứng tuyển', value: 450, fill: '#3b82f6' },
@@ -39,6 +40,66 @@ const MONTHLY_DATA = [
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 const Reports: React.FC = () => {
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [funnelData, setFunnelData] = useState(FUNNEL_DATA);
+  const [monthlyData, setMonthlyData] = useState(MONTHLY_DATA);
+
+  useEffect(() => {
+    applicationService
+      .getApplications()
+      .then((data) => {
+        setApplications(data);
+        setFunnelData([
+          { name: "Ứng tuyển", value: data.length, fill: "#3b82f6" },
+          {
+            name: "Sàng lọc",
+            value: data.filter((item) =>
+              ["shortlisted", "interviewing", "interview_passed", "offered", "hired"].includes(item.status)
+            ).length,
+            fill: "#6366f1",
+          },
+          {
+            name: "Phỏng vấn",
+            value: data.filter((item) =>
+              ["interviewing", "interview_passed", "offered", "hired"].includes(item.status)
+            ).length,
+            fill: "#8b5cf6",
+          },
+          {
+            name: "Offer",
+            value: data.filter((item) => ["offered", "hired"].includes(item.status)).length,
+            fill: "#a855f7",
+          },
+          { name: "Tuyển dụng", value: data.filter((item) => item.status === "hired").length, fill: "#10b981" },
+        ]);
+
+        const monthMap = data.reduce<Record<string, { month: string; total: number; hired: number }>>(
+          (acc, item) => {
+            const date = new Date(item.appliedAt);
+            const key = `${date.getFullYear()}-${date.getMonth()}`;
+            acc[key] ??= {
+              month: date.toLocaleDateString("vi-VN", { month: "short" }),
+              total: 0,
+              hired: 0,
+            };
+            acc[key].total += 1;
+            if (item.status === "hired") acc[key].hired += 1;
+            return acc;
+          },
+          {}
+        );
+        const derivedMonthlyData = Object.values(monthMap).slice(-6);
+        if (derivedMonthlyData.length > 0) setMonthlyData(derivedMonthlyData);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const hiredCount = applications.filter((item) => item.status === "hired").length;
+  const hiringRate = useMemo(
+    () => (applications.length > 0 ? ((hiredCount / applications.length) * 100).toFixed(1) : "0.0"),
+    [applications.length, hiredCount]
+  );
+
   return (
     <div className="p-6 space-y-8 animate-in fade-in duration-500">
       {/* Header */}
@@ -66,8 +127,8 @@ const Reports: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Tổng ứng viên", val: "450", trend: "+12.5%", icon: Users, color: "blue" },
-          { label: "Tỷ lệ tuyển", val: "4.4%", trend: "+0.8%", icon: Target, color: "emerald" },
+          { label: "Tổng ứng viên", val: String(applications.length), trend: "+0%", icon: Users, color: "blue" },
+          { label: "Tỷ lệ tuyển", val: `${hiringRate}%`, trend: "+0%", icon: Target, color: "emerald" },
           { label: "Thời gian tuyển", val: "18d", trend: "-2d", icon: Activity, color: "amber" },
           { label: "Chi phí/Hồ sơ", val: "$120", trend: "+$5", icon: TrendingUp, color: "rose" },
         ].map((kpi, i) => (
@@ -98,9 +159,9 @@ const Reports: React.FC = () => {
             </h3>
           </div>
           <div className="space-y-4">
-            {FUNNEL_DATA.map((item, i) => {
+            {funnelData.map((item, i) => {
               const maxWidth = 100;
-              const width = (item.value / FUNNEL_DATA[0].value) * maxWidth;
+              const width = funnelData[0].value > 0 ? (item.value / funnelData[0].value) * maxWidth : 0;
               return (
                 <div key={item.name} className="space-y-1.5">
                   <div className="flex justify-between text-[10px] font-bold text-slate-500">
@@ -118,7 +179,7 @@ const Reports: React.FC = () => {
                     />
                     {i > 0 && (
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400">
-                        {((item.value / FUNNEL_DATA[i-1].value) * 100).toFixed(0)}%
+                        {funnelData[i - 1].value > 0 ? ((item.value / funnelData[i-1].value) * 100).toFixed(0) : 0}%
                       </span>
                     )}
                   </div>
@@ -141,7 +202,7 @@ const Reports: React.FC = () => {
           </div>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MONTHLY_DATA}>
+              <AreaChart data={monthlyData}>
                 <defs>
                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
@@ -193,7 +254,7 @@ const Reports: React.FC = () => {
                   cornerRadius={10}
                   dataKey="value"
                 >
-                  {SOURCE_DATA.map((entry, index) => (
+                  {SOURCE_DATA.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
