@@ -1,16 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Calendar, Clock, CheckCircle2, Circle, AlertTriangle,
+  Calendar, Clock, CheckCircle2, Circle,
   User, Building2, Mail, Phone, Star,
-  ClipboardCheck, FileText, MessageSquare, Target,
+  ClipboardCheck, MessageSquare, Target,
   ArrowUpRight, TrendingUp, BookOpen
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { probationService } from "@/services";
 
 // ─── Dữ liệu giả lập ────────────────────────────────────────
 
 /** Thông tin cá nhân thử việc */
-const PROBATIONER_INFO = {
+const DEFAULT_PROBATIONER_INFO = {
   name: "Lê Thị Lan",
   email: "lan.le@company.com",
   phone: "0912 345 678",
@@ -23,11 +24,6 @@ const PROBATIONER_INFO = {
   totalDays: 61,
   daysPassed: 51,
 };
-
-/** Tiến độ tổng thể */
-const progressPercent = Math.round(
-  (PROBATIONER_INFO.daysPassed / PROBATIONER_INFO.totalDays) * 100
-);
 
 /** Nhiệm vụ / mục tiêu trong thời gian thử việc */
 interface ProbationTask {
@@ -173,6 +169,45 @@ function StarRating({ rating }: { rating: number }) {
 
 // ─── Page component ──────────────────────────────────────────
 const ProbationerDashboard: React.FC = () => {
+  const [probationerInfo, setProbationerInfo] = useState(DEFAULT_PROBATIONER_INFO);
+
+  useEffect(() => {
+    probationService
+      .getMyProbation()
+      .then((probation) => {
+        const startDate = new Date(probation.startDate);
+        const endDate = new Date(probation.endDate);
+        const today = new Date();
+        const totalDays = Math.max(
+          1,
+          Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000)
+        );
+        const daysPassed = Math.min(
+          totalDays,
+          Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / 86400000))
+        );
+
+        setProbationerInfo({
+          name: probation.fullName,
+          email: probation.email,
+          phone: probation.phone || "Chưa cập nhật",
+          position: probation.jobTitle,
+          department: probation.department,
+          supervisor: probation.supervisorName || "Chưa phân công",
+          startDate: startDate.toISOString().slice(0, 10),
+          endDate: endDate.toISOString().slice(0, 10),
+          daysRemaining: Math.max(0, totalDays - daysPassed),
+          totalDays,
+          daysPassed,
+        });
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const PROBATIONER_INFO = probationerInfo;
+  const progressPercent = Math.round(
+    (PROBATIONER_INFO.daysPassed / PROBATIONER_INFO.totalDays) * 100
+  );
   const completedTasks = TASKS.filter((t) => t.status === "completed").length;
   const totalTasks = TASKS.length;
   const taskPercent = Math.round((completedTasks / totalTasks) * 100);

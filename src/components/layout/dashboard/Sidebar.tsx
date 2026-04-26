@@ -1,38 +1,23 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Briefcase,
-  Users,
-  ClipboardCheck,
-  BarChart3,
-  GraduationCap,
   ChevronLeft,
   PanelLeftOpen
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
-import { Link } from "react-router-dom";
 import logo from "../../../assets/images/Logo.png";
-interface NavItem {
-  to: string;
-  label: string;
-  icon: React.ElementType;
-}
-
-const navItems: NavItem[] = [
-  { to: "/recruiter/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/recruiter/jobs", label: "Tin tuyển dụng", icon: Briefcase },
-  { to: "/recruiter/candidates", label: "Hồ sơ ứng viên", icon: Users },
-  { to: "/recruiter/probation", label: "Quản lý thử việc", icon: ClipboardCheck },
-  { to: "/recruiter/reports", label: "Báo cáo", icon: BarChart3 },
-];
+import { DASHBOARD_NAV_ITEMS, ROLE_DASHBOARD } from "@/routes/routes.config";
+import type { UserRole } from "@/types";
 
 interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  role: UserRole;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
+const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed, role }) => {
+  const navItems = DASHBOARD_NAV_ITEMS[role];
+
   return (
     <aside
       className={cn(
@@ -45,7 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
         {!collapsed ? (
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <Link
-              to="/"
+              to={ROLE_DASHBOARD[role]}
               className="flex items-center gap-2.5 group duration-300"
             >
               <img

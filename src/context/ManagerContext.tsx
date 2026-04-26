@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { interviewService, probationService } from "@/services";
+import { formatDate } from "@/utils/date";
 
 type Interview = {
   id: number;
@@ -78,6 +80,37 @@ export const ManagerProvider = ({ children }: { children: ReactNode }) => {
       dueDate: "27/04/2026",
     },
   ]);
+
+  useEffect(() => {
+    interviewService
+      .getInterviews()
+      .then((items) =>
+        setInterviews(
+          items.map((item) => ({
+            id: Number(item.id),
+            name: item.candidateName,
+            role: item.jobTitle,
+            status: item.status === "done" ? "Hoàn thành" : "Chờ xác nhận",
+            date: formatDate(item.scheduledAt),
+          }))
+        )
+      )
+      .catch(() => undefined);
+
+    probationService
+      .getProbationers()
+      .then((items) =>
+        setProbation(
+          items.map((item) => ({
+            id: Number(item.id),
+            name: item.fullName,
+            role: item.jobTitle,
+            dueDate: formatDate(item.endDate),
+          }))
+        )
+      )
+      .catch(() => undefined);
+  }, []);
 
   return (
     <ManagerContext.Provider

@@ -1,14 +1,22 @@
 import { ArrowRight } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const jobs = [
-  { id: 1, title: "Chuyên viên Quản lý sản phẩm" },
-  { id: 2, title: "Designer UI/UX" },
-  { id: 3, title: "FullStack Developer" },
-];
+import { jobService } from "@/services";
+import type { Job } from "@/types";
 
 const JobList: React.FC = () => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    jobService
+      .getJobs({ status: "published" })
+      .then(setJobs)
+      .catch(() => setError("Không thể tải danh sách việc làm."))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   return (
     // Bọc ngoài cùng với một chút màu nền gradient nhẹ để nổi bật các card trắng
     <div className="min-h-screen  p-8">
@@ -17,7 +25,18 @@ const JobList: React.FC = () => {
           Cơ hội nghề nghiệp
         </h1>
 
-        {/* Chuyển khoảng cách gap vào container cha */}
+        {isLoading && (
+          <div className="rounded-2xl border border-[#cccdfa] bg-white/80 p-6 text-sm font-semibold text-gray-500">
+            Đang tải danh sách việc làm...
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm font-semibold text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="flex flex-col gap-5">
           {jobs.map((job) => (
             <div
@@ -30,7 +49,7 @@ const JobList: React.FC = () => {
                     {job.title}
                   </h2>
                   <p className="text-gray-500 mt-1.5 font-medium">
-                    Công ty Cổ phần VinSmart Future
+                    {job.department}
                   </p>
                 </div>
 

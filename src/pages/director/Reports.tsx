@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import {
-  BarChart3, TrendingUp, TrendingDown, Users, Target,
-  Download, Filter, Calendar, ArrowUpRight, ArrowDownRight,
+  BarChart3, TrendingDown, Users,
+  Download, Filter, ArrowUpRight,
   PieChart as PieChartIcon, Activity, Building2, Briefcase,
   CheckCircle2, Clock, UserCheck, FileCheck2
 } from "lucide-react";
 import {
-  LineChart, Line, BarChart, Bar,
+  BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
-  AreaChart, Area, Legend
+  AreaChart, Area
 } from "recharts";
 import { cn } from "../../lib/utils";
 

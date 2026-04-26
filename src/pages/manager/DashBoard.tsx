@@ -6,19 +6,14 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Button from "@/components/ui/button";
+import Button from "@/components/ui/Button";
 import { Link } from "react-router-dom";
 import { useManager } from "@/context/ManagerContext";
+import { getDaysLeft } from "@/utils/date";
 const DashboardManager = () => {
   const managerName = "Nguyễn Văn A";
   // Mock data
   const { interviews, probation } = useManager();
-  const getDaysLeft = (date: string) => {
-    const today = new Date();
-    const due = new Date(date.split("/").reverse().join("-"));
-    return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  };
-
   return (
     <div className="p-6 space-y-6">
       {/* Page Header */}
