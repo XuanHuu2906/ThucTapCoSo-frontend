@@ -16,6 +16,7 @@ type Probation = {
   name: string;
   role: string;
   dueDate: string;
+  status: string;
 };
 
 type ManagerContextType = {
@@ -72,12 +73,14 @@ export const ManagerProvider = ({ children }: { children: ReactNode }) => {
       name: "Hoàng Thị E",
       role: "Marketing",
       dueDate: "20/04/2026",
+      status: "probating",
     },
     {
       id: 2,
       name: "Vũ Văn F",
       role: "Sales",
       dueDate: "27/04/2026",
+      status: "probating",
     },
   ]);
 
@@ -97,6 +100,7 @@ export const ManagerProvider = ({ children }: { children: ReactNode }) => {
       )
       .catch(() => undefined);
 
+    // Lấy toàn bộ nhân viên thử việc thuộc quyền quản lý của Supervisor này
     probationService
       .getProbationers()
       .then((items) =>
@@ -106,6 +110,7 @@ export const ManagerProvider = ({ children }: { children: ReactNode }) => {
             name: item.fullName,
             role: item.jobTitle,
             dueDate: formatDate(item.endDate),
+            status: item.status, // "probating" | "pending_evaluation" | "passed" | "failed"
           }))
         )
       )

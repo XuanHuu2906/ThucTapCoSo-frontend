@@ -46,6 +46,7 @@ export interface Probationer {
 
   // Thông tin đánh giá (sau khi HM nộp – UC-13)
   evaluationId?: string;    // ID phiếu đánh giá thử việc (có sau khi HM nộp)
+  evaluation?: ProbationEvaluation; // Chi tiết đánh giá từ database (KPI, nhận xét...)
 
   createdAt: string;        // Ngày tạo bản ghi thử việc
   updatedAt: string;        // Ngày cập nhật gần nhất

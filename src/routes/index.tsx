@@ -12,10 +12,12 @@ import DashboardManager from "@/pages/manager/DashBoard";
 import Interviews from "@/pages/manager/Interviews";
 import Reviews from "@/pages/manager/Reviews";
 import NotFound from "@/pages/NotFound";
+import OfferResponse from "@/pages/candidate/OfferResponse";
 import ProbationerDashboard from "@/pages/probationer/Dashboard";
 import RecruiterCandidates from "@/pages/recruiter/Candidates";
 import RecruiterDashboard from "@/pages/recruiter/Dashboard";
 import RecruiterJobs from "@/pages/recruiter/Jobs";
+import RecruiterOffers from "@/pages/recruiter/Offers";
 import Probation from "@/pages/recruiter/Probation";
 import Reports from "@/pages/recruiter/Reports";
 import ProtectedRoute from "./ProtectedRoute";
@@ -30,6 +32,9 @@ const AppRoutes = () => {
         <Route path={ROUTES.login} element={<Login />} />
       </Route>
 
+      {/* UC-10: Trang public cho ứng viên phản hồi Offer (không có layout) */}
+      <Route path="/offer-response/:token" element={<OfferResponse />} />
+
       <Route
         element={
           <ProtectedRoute allowedRoles={["recruiter"]}>
@@ -40,6 +45,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.recruiter.dashboard} element={<RecruiterDashboard />} />
         <Route path={ROUTES.recruiter.jobs} element={<RecruiterJobs />} />
         <Route path={ROUTES.recruiter.candidates} element={<RecruiterCandidates />} />
+        <Route path={ROUTES.recruiter.offers} element={<RecruiterOffers />} />
         <Route path={ROUTES.recruiter.probation} element={<Probation />} />
         <Route path={ROUTES.recruiter.reports} element={<Reports />} />
       </Route>

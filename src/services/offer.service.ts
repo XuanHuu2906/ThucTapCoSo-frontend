@@ -15,6 +15,7 @@ type BackendOffer = {
   startDate: string;
   status: string;
   directorNote?: string | null;
+  declineReason?: string | null;
   createdAt: string;
   application?: {
     candidate?: { candidateId: number; fullName: string; email: string };
@@ -56,6 +57,7 @@ const mapOffer = (offer: BackendOffer): Offer => ({
   createdBy: String(offer.createdBy),
   reviewedBy: offer.approvedBy ? String(offer.approvedBy) : undefined,
   directorComment: offer.directorNote ?? undefined,
+  declineReason: offer.declineReason ?? undefined,
   createdAt: offer.createdAt,
   updatedAt: offer.createdAt,
 });
@@ -66,7 +68,7 @@ export const offerService = {
       appId: Number(payload.applicationId),
       baseSalary: payload.baseSalary,
       allowance: payload.allowance ?? 0,
-      startDate: payload.startDate,
+      startDate: new Date(payload.startDate).toISOString(),
     });
     return mapOffer(unwrapResponse(response));
   },
