@@ -26,6 +26,9 @@ type BackendProbation = {
         title: string;
         deptName: string;
       };
+      candidate?: {
+        phone?: string;
+      };
     };
   };
   evaluation?: BackendEvaluation | null;
@@ -97,7 +100,7 @@ const mapProbationer = (probation: BackendProbation): Probationer => ({
   offerId: String(probation.offerId),
   fullName: probation.probationer?.fullName ?? "Không rõ nhân viên",
   email: probation.probationer?.email ?? "",
-  phone: "",
+  phone: probation.offer?.application?.candidate?.phone ?? "",
   jobId: String(probation.offer?.application?.jobPosting?.jobId ?? ""),
   jobTitle: probation.offer?.application?.jobPosting?.title ?? "Không rõ vị trí",
   department: probation.offer?.application?.jobPosting?.deptName ?? "",
@@ -107,11 +110,17 @@ const mapProbationer = (probation: BackendProbation): Probationer => ({
   supervisorName: probation.supervisor?.fullName ?? "",
   status: statusMap[probation.status] ?? "probating",
   evaluationId: probation.evaluation ? String(probation.evaluation.evalId) : undefined,
+  evaluation: probation.evaluation ? mapEvaluation(probation.evaluation) : undefined,
   createdAt: probation.createdAt,
   updatedAt: probation.createdAt,
 });
 
 export const probationService = {
+  async getEndingSoon(): Promise<Probationer[]> {
+    const response = await api.get<BackendProbation[]>("/probations/ending-soon");
+    return unwrapResponse(response).map(mapProbationer);
+  },
+
   async getProbationers(filter?: ProbationerFilter): Promise<Probationer[]> {
     const response = await api.get<BackendProbation[]>("/probations", {
       params: {

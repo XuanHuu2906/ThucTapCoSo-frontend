@@ -7,22 +7,39 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { probationService } from "@/services";
+import type { ProbationEvaluation } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
+
+const STATUS_LABELS: Record<string, string> = {
+  probating: "Đang thử việc",
+  pending_evaluation: "Chờ phê duyệt",
+  passed: "Chính thức",
+  failed: "Đã chấm dứt",
+};
+
+const STATUS_DESCRIPTIONS: Record<string, string> = {
+  probating: "Bạn đang trong quá trình thử việc. Hãy tập trung hoàn thành tốt các nhiệm vụ.",
+  pending_evaluation: "Đánh giá thử việc của bạn đã được gửi và đang chờ Giám đốc phê duyệt.",
+  passed: "Chúc mừng! Bạn đã xuất sắc trở thành nhân viên chính thức của công ty.",
+  failed: "Thời gian thử việc đã kết thúc. Cảm ơn sự đồng hành và nỗ lực của bạn.",
+};
 
 // ─── Dữ liệu giả lập ────────────────────────────────────────
 
-/** Thông tin cá nhân thử việc */
+/** Thông tin cá nhân thử việc mặc định */
 const DEFAULT_PROBATIONER_INFO = {
-  name: "Lê Thị Lan",
-  email: "lan.le@company.com",
-  phone: "0912 345 678",
-  position: "Frontend Developer",
-  department: "Engineering",
-  supervisor: "Nguyễn Văn Hùng",
-  startDate: "2026-03-01",
-  endDate: "2026-05-01",
-  daysRemaining: 10,
-  totalDays: 61,
-  daysPassed: 51,
+  name: "Chưa cập nhật",
+  email: "Chưa cập nhật",
+  phone: "Chưa cập nhật",
+  position: "Chưa cập nhật",
+  department: "Chưa cập nhật",
+  supervisor: "Chưa phân công",
+  startDate: new Date().toISOString().slice(0, 10),
+  endDate: new Date().toISOString().slice(0, 10),
+  daysRemaining: 0,
+  totalDays: 1,
+  daysPassed: 0,
+  status: "probating",
 };
 
 /** Nhiệm vụ / mục tiêu trong thời gian thử việc */
@@ -79,50 +96,6 @@ const TASKS: ProbationTask[] = [
   },
 ];
 
-/** Nhận xét từ người hướng dẫn */
-interface SupervisorFeedback {
-  id: string;
-  date: string;
-  rating: number; // 1–5
-  comment: string;
-  week: string;
-}
-
-const FEEDBACKS: SupervisorFeedback[] = [
-  {
-    id: "1",
-    date: "2026-03-07",
-    rating: 4,
-    week: "Tuần 1",
-    comment:
-      "Hòa nhập nhanh, chủ động tìm hiểu codebase. Cần cải thiện tốc độ setup local env.",
-  },
-  {
-    id: "2",
-    date: "2026-03-14",
-    rating: 4,
-    week: "Tuần 2",
-    comment:
-      "Hoàn thành training đúng tiến độ. Thái độ tích cực, hay đặt câu hỏi hữu ích.",
-  },
-  {
-    id: "3",
-    date: "2026-03-28",
-    rating: 5,
-    week: "Tuần 4",
-    comment:
-      "Vượt chỉ tiêu fix bug. Code quality khá tốt, ít phải chỉnh sửa sau PR review.",
-  },
-  {
-    id: "4",
-    date: "2026-04-11",
-    rating: 4,
-    week: "Tuần 6",
-    comment:
-      "Feature Dashboard đang tiến triển tốt. Giao tiếp với team có cải thiện rõ rệt.",
-  },
-];
-
 // ─── Helper components ───────────────────────────────────────
 
 const TASK_STATUS_CONFIG: Record<
@@ -169,7 +142,14 @@ function StarRating({ rating }: { rating: number }) {
 
 // ─── Page component ──────────────────────────────────────────
 const ProbationerDashboard: React.FC = () => {
-  const [probationerInfo, setProbationerInfo] = useState(DEFAULT_PROBATIONER_INFO);
+  const { user } = useAuth();
+  const [probationerInfo, setProbationerInfo] = useState(() => ({
+    ...DEFAULT_PROBATIONER_INFO,
+    name: user?.fullName || DEFAULT_PROBATIONER_INFO.name,
+    email: user?.email || DEFAULT_PROBATIONER_INFO.email,
+    phone: user?.phone || DEFAULT_PROBATIONER_INFO.phone,
+  }));
+  const [evaluation, setEvaluation] = useState<ProbationEvaluation | null>(null);
 
   useEffect(() => {
     probationService
@@ -199,7 +179,12 @@ const ProbationerDashboard: React.FC = () => {
           daysRemaining: Math.max(0, totalDays - daysPassed),
           totalDays,
           daysPassed,
+          status: probation.status,
         });
+
+        if (probation.evaluation) {
+          setEvaluation(probation.evaluation);
+        }
       })
       .catch(() => undefined);
   }, []);
@@ -344,7 +329,7 @@ const ProbationerDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Card: Đánh giá trung bình */}
+          {/* Card: Đánh giá thử việc */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
@@ -354,26 +339,31 @@ const ProbationerDashboard: React.FC = () => {
               </div>
               <div className="mt-4">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                  Đánh giá trung bình
+                  Đánh giá thử việc
                 </p>
-                <p className="text-3xl font-black text-slate-900 dark:text-slate-50 mt-1">
-                  {(
-                    FEEDBACKS.reduce((s, f) => s + f.rating, 0) /
-                    FEEDBACKS.length
-                  ).toFixed(1)}
-                  <span className="text-lg text-slate-400 font-medium">/5</span>
-                </p>
+                {evaluation ? (
+                  <>
+                    <p className="text-3xl font-black text-slate-900 dark:text-slate-50 mt-1">
+                      {evaluation.kpiScore}
+                      <span className="text-lg text-slate-400 font-medium">/10 KPI</span>
+                    </p>
+                    <p className="text-xs text-amber-600 font-semibold mt-1">
+                      Đề xuất: {evaluation.recommendation === "sign_contract" ? "Ký HĐ chính thức" : "Dừng thử việc"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-2">
+                    Chưa có đánh giá chính thức
+                  </p>
+                )}
               </div>
             </div>
             <div className="mt-4">
               <StarRating
-                rating={Math.round(
-                  FEEDBACKS.reduce((s, f) => s + f.rating, 0) /
-                    FEEDBACKS.length
-                )}
+                rating={evaluation ? Math.round(evaluation.kpiScore / 2) : 0}
               />
               <p className="text-[10px] text-slate-400 mt-1.5">
-                Dựa trên {FEEDBACKS.length} lần đánh giá
+                {evaluation ? "Đã đánh giá bởi Supervisor" : "Chờ quản lý đánh giá khi hết hạn"}
               </p>
             </div>
           </div>
@@ -387,7 +377,7 @@ const ProbationerDashboard: React.FC = () => {
                 </div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold text-blue-600 ring-1 ring-inset ring-blue-200/50 uppercase tracking-widest">
                   <Clock size={10} />
-                  Đang thử việc
+                  {STATUS_LABELS[PROBATIONER_INFO.status] || "Đang thử việc"}
                 </span>
               </div>
               <div className="mt-4">
@@ -395,13 +385,12 @@ const ProbationerDashboard: React.FC = () => {
                   Trạng thái tổng
                 </p>
                 <p className="text-lg font-black text-slate-900 dark:text-slate-50 mt-1">
-                  Tiến triển tốt
+                  {STATUS_LABELS[PROBATIONER_INFO.status] || "Đang thử việc"}
                 </p>
               </div>
             </div>
             <p className="mt-4 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              Bạn đang trên đà hoàn thành tốt giai đoạn thử việc. Hãy tập trung
-              hoàn thành các nhiệm vụ còn lại.
+              {STATUS_DESCRIPTIONS[PROBATIONER_INFO.status] || "Bạn đang trong quá trình thử việc."}
             </p>
           </div>
         </div>
@@ -491,28 +480,46 @@ const ProbationerDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {FEEDBACKS.map((fb) => (
-            <div
-              key={fb.id}
-              className="px-6 py-5 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold text-blue-600 ring-1 ring-inset ring-blue-200/50 uppercase tracking-widest">
-                    {fb.week}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">
-                    {fb.date}
-                  </span>
+        <div className="p-6">
+          {evaluation ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold text-blue-600 ring-1 ring-inset ring-blue-200/50 uppercase tracking-widest">
+                  Đánh giá chính thức
+                </span>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-slate-400">KPI: {evaluation.kpiScore}/10</span>
+                  <StarRating rating={Math.round(evaluation.kpiScore / 2)} />
                 </div>
-                <StarRating rating={fb.rating} />
               </div>
-              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                {fb.comment}
+              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                "{evaluation.comment}"
               </p>
+
+              {evaluation.directorDecision && (
+                <div className="mt-4 p-4 rounded-2xl border bg-violet-50/50 dark:bg-violet-500/5 border-violet-100 dark:border-violet-800/50 text-left">
+                  <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400 mb-1">
+                    <CheckCircle2 size={16} />
+                    <span className="text-xs font-bold uppercase tracking-wider">Phản hồi từ Giám đốc</span>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    Quyết định: <strong className="text-violet-700 dark:text-violet-300">{evaluation.directorDecision === "approved" ? "Phê duyệt đề xuất" : "Từ chối đề xuất"}</strong>
+                  </p>
+                  {evaluation.directorComment && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
+                      Ghi chú từ Giám đốc: "{evaluation.directorComment}"
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-          ))}
+          ) : (
+            <div className="text-center py-8 text-slate-400 dark:text-slate-500">
+              <MessageSquare className="h-10 w-10 mx-auto opacity-30 mb-2" />
+              <p className="text-sm font-medium">Chưa có đánh giá hay nhận xét chính thức nào</p>
+              <p className="text-xs mt-1">Người hướng dẫn sẽ tiến hành đánh giá năng lực của bạn khi thời hạn thử việc sắp kết thúc.</p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center px-6 py-50">
+    <div className="flex flex-col items-center justify-center px-6 py-8 min-h-[70vh]">
       <div className="w-full max-w-md">
         <Link
           to="/"
@@ -46,7 +46,7 @@ export default function Login() {
           <ArrowLeft size={15} />
           Trang chủ
         </Link>
-        <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 p-8 shadow-xl shadow-slate-200/50 dark:shadow-none sm:p-10 border border-slate-100 dark:border-slate-800 relative">
+        <div className="mt-4 w-full rounded-3xl bg-white dark:bg-slate-900 p-8 shadow-xl shadow-slate-200/50 dark:shadow-none sm:p-10 border border-slate-100 dark:border-slate-800 relative">
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl">
               {view === "login" ? "Chào mừng trở lại!" : "Khôi phục mật khẩu"}

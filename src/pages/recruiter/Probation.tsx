@@ -159,6 +159,7 @@ const Probation: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
   const [managerError, setManagerError] = useState("");
+  const [endingSoonCount, setEndingSoonCount] = useState(0);
 
   const loadProbationers = () => {
     setIsLoading(true);
@@ -185,6 +186,11 @@ const Probation: React.FC = () => {
   useEffect(() => {
     loadProbationers();
     loadHiringManagers();
+
+    probationService
+      .getEndingSoon()
+      .then((data) => setEndingSoonCount(data.length))
+      .catch(() => setEndingSoonCount(0));
   }, []);
 
   const departments = useMemo(
@@ -232,7 +238,7 @@ const Probation: React.FC = () => {
     return options;
   }, [hiringManagers, modalMode, selectedProbationer]);
 
-  const endingSoonCount = probationers.filter((item) => getDisplayStatus(item) === "ending_soon").length;
+  // endingSoonCount is now fetched from API in useEffect
 
   const closeModal = () => {
     setModalMode("none");
@@ -545,25 +551,27 @@ const Probation: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-slate-900 dark:bg-blue-600 rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-blue-500/20">
-        <div className="flex items-center gap-6">
-          <div className="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-            <AlertTriangle size={32} />
+      {endingSoonCount > 0 && (
+        <div className="bg-slate-900 dark:bg-blue-600 rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-blue-500/20">
+          <div className="flex items-center gap-6">
+            <div className="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <AlertTriangle size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold">Lưu ý trong tuần</h3>
+              <p className="text-white/70 text-sm">
+                Có <span className="text-white font-bold">{endingSoonCount} nhân viên</span> sắp hoàn thành thử việc trong 7 ngày tới.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-bold">Lưu ý trong tuần</h3>
-            <p className="text-white/70 text-sm">
-              Có <span className="text-white font-bold">{endingSoonCount} nhân viên</span> sắp hoàn thành thử việc trong 7 ngày tới.
-            </p>
-          </div>
+          <button
+            onClick={() => setStatusFilter("ending_soon")}
+            className="px-8 py-3 rounded-2xl bg-white text-slate-900 font-bold hover:bg-slate-100 transition-all active:scale-95"
+          >
+            Xem ngay
+          </button>
         </div>
-        <button
-          onClick={() => setStatusFilter("ending_soon")}
-          className="px-8 py-3 rounded-2xl bg-white text-slate-900 font-bold hover:bg-slate-100 transition-all active:scale-95"
-        >
-          Xem ngay
-        </button>
-      </div>
+      )}
 
       {modalMode !== "none" && selectedProbationer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">

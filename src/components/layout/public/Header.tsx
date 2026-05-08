@@ -1,8 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import logo from "../../../assets/images/Logo.png";
 
 const PublicHeader: React.FC = () => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+
   return (
     <header className="h-18 bg-white/60 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 flex items-center justify-between px-8 shadow-sm">
       <Link
@@ -16,13 +19,15 @@ const PublicHeader: React.FC = () => {
         />
       </Link>
 
-      {/* Bên Phải: Nút Đăng nhập */}
-      <Link
-        to="/login"
-        className="px-6 py-2 text-blue-600 font-semibold border-2 border-blue-600 rounded-lg hover:bg-blue-200 transition-colors duration-300"
-      >
-        Đăng nhập
-      </Link>
+      {/* Bên Phải: Nút Đăng nhập (Ẩn nếu đã ở trang Login) */}
+      {!isLoginPage && (
+        <Link
+          to="/login"
+          className="px-6 py-2 text-blue-600 font-semibold border-2 border-blue-600 rounded-lg hover:bg-blue-200 transition-colors duration-300"
+        >
+          Đăng nhập
+        </Link>
+      )}
     </header>
   );
 };
