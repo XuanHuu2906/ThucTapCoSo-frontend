@@ -1,7 +1,8 @@
 import type { ApplicationStatus, JobStatus, OfferStatus, ProbationStatus, UserRole } from "@/types";
 
 export const APP_NAME = "TalentFlow";
-export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000/api/v1";
+const rawApiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+export const API_URL = rawApiUrl.endsWith("/api/v1") ? rawApiUrl : `${rawApiUrl}/api/v1`;
 export const AUTH_TOKEN_KEY = "rms_access_token";
 export const AUTH_REFRESH_TOKEN_KEY = "rms_refresh_token";
 
