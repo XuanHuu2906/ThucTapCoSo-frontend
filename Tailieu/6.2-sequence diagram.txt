@@ -1,0 +1,127 @@
+6.2 Sequence Diagrams
+
+Purpose:
+Show detailed object interactions over time for key use cases, revealing method calls, parameters, return values, and control flow. Sequence diagrams validate that designed classes can actually accomplish required behaviors and expose missing methods or incorrect responsibilities before coding begins.
+
+Prerequisite deliverables from previous steps:
+- DOC 2.1-B: Use Case Specifications Document (from step 2.1)
+- DOC 2.2-A: Process Flow Diagrams (from step 2.2)
+- DOC 5.2-A: API Specification Document (from step 5.2)
+- DOC 6.1-A: Detailed Class Diagrams (from step 6.1)
+
+Tasks:
+
+Task 6.2.1: Select Use Cases for Sequence Diagrams
+    Use the use case specifications (DOC 2.1-B) and process flows (DOC 2.2-A) to identify which scenarios need detailed sequence diagrams.
+    
+    Guiding questions:
+    - Which use cases are most complex? (multiple decision points from 2.2-A)
+    - Which use cases are highest priority or risk?
+    - Which use cases involve many classes/components? (from class diagram 6.1-A)
+    - Which use cases have intricate workflows? (from process flows 2.2-A)
+    - Which use cases need detailed specification for developers?
+    
+    Acceptance criteria:
+    - 5-8 use cases selected for detailed sequence diagrams
+    - Selection includes main success scenarios and key alternative flows
+    - Complex use cases with multiple decision points prioritized
+    - Use cases covering critical business operations included
+    - Use cases spanning multiple components/layers included
+    
+    Example:
+    "Selected: UC-003 Submit Order (complex workflow, multiple validations, external payment call), UC-005 Process Return (cross-component coordination), UC-008 Generate Invoice (calculations, data aggregation), UC-001 User Login (authentication flow), UC-015 Update Inventory (concurrency handling)."
+    
+    Red flags to watch for:
+    - Only simple CRUD operations selected (missing complex scenarios)
+    - Too many diagrams planned (diminishing returns beyond 8-10)
+    - No alternative flows diagrammed (only happy paths)
+
+Task 6.2.2: Create Sequence Diagrams with Detailed Interactions
+    Map use case flows (DOC 2.1-B) to object interactions using classes from DOC 6.1-A and APIs from DOC 5.2-A, showing exact method calls, parameters, and returns.
+    
+    Guiding questions:
+    - What object initiates the interaction? (controller, service)
+    - What sequence of method calls accomplishes the use case? (from 2.1-B flows)
+    - What parameters are passed? What values returned?
+    - How are API calls represented? (from API spec 5.2-A)
+    - Where are decisions made? (alt/opt fragments for conditionals)
+    - How are loops represented? (loop fragments from process flows 2.2-A)
+    - How are errors handled? (exception flows)
+    
+    Acceptance criteria:
+    - Participants (objects/actors) shown at top with lifelines
+    - Messages (method calls) shown as arrows with method signatures
+    - Return values shown as dashed arrows
+    - Conditional logic shown using alt/opt fragments (from alternative flows)
+    - Loops shown using loop fragments (from process flows)
+    - Exception handling shown (throwing, catching)
+    - API calls match endpoint specifications from DOC 5.2-A
+    - Database calls shown to repository objects
+    - Activation bars show when objects are active
+    - Each diagram traceable to specific use case flow from DOC 2.1-B
+    
+    Example:
+    "UC-003 Submit Order sequence: Actor → OrderController.createOrder(orderDTO). OrderController → OrderValidator.validate(orderDTO) returns validationResult. [alt: valid] OrderController → OrderService.processOrder(orderDTO). OrderService → ProductService.checkAvailability(items). OrderService → OrderRepository.save(order) returns savedOrder. OrderService → PaymentService.processPayment(payment). PaymentService → PaymentGatewayAPI.charge(details) (from external system API 5.2-A). [alt: payment fails] throw PaymentException. OrderService → NotificationService.sendConfirmation(order)."
+    
+    Red flags to watch for:
+    - Vague method names (process() instead of specific operations)
+    - Missing parameters or return values
+    - No error handling shown
+    - Methods called on objects that don't have those methods (inconsistent with 6.1-A)
+    - Direct database access from controllers (violating layers)
+
+Task 6.2.3: Validate and Iterate with Class Diagrams
+    Review sequence diagrams against class diagrams (DOC 6.1-A) to ensure consistency, identifying missing methods or classes requiring updates.
+    
+    Guiding questions:
+    - Does every method call exist in the class diagram? (from 6.1-A)
+    - Are method signatures consistent? (parameters, return types)
+    - Are any classes missing that are needed for interactions?
+    - Are responsibilities correctly assigned?
+    - Do sequence diagrams reveal simpler interaction patterns?
+    
+    Acceptance criteria:
+    - All methods in sequence diagrams exist in class diagrams (or identified as additions)
+    - Method signatures match between diagrams and class specifications
+    - Missing classes or methods documented for addition to DOC 6.1-A
+    - Responsibility mismatches identified and resolved
+    - Both diagrams kept in sync through iterative updates
+    
+    Example:
+    "Validation found: OrderService.processOrder() calls OrderValidator.validateAddress() but method missing from OrderValidator class in 6.1-A—added to class diagram. PaymentService needs refund() method for return processing—added to class diagram. Discovered OrderController doesn't need direct OrderRepository access—removed dependency."
+    
+    Red flags to watch for:
+    - Methods in sequence diagrams don't exist in classes
+    - Controllers directly accessing repositories (skip service layer)
+    - Sequence diagrams don't match use case flows from 2.1-B
+    - No iteration back to update class diagrams
+
+Deliverable:
+DOC 6.2-A: Sequence Diagrams
+
+Output format:
+Document containing (12-20 pages):
+
+1. **Overview:** Purpose, notation guide, relationship to use cases
+
+2. **Sequence Diagrams:** One diagram per selected use case (5-8 diagrams, 1-2 pages each):
+   - Use case ID and name (from DOC 2.1-B)
+   - Scenario being diagrammed (main flow or specific alternative)
+   - UML sequence diagram showing:
+     - Participants/objects across top
+     - Lifelines (vertical dashed lines)
+     - Method calls (solid arrows with signatures)
+     - Returns (dashed arrows with values)
+     - Alt/opt/loop fragments for control flow
+     - Exception handling
+   - Annotations explaining complex interactions
+   - References to APIs used (from DOC 5.2-A)
+
+3. **Cross-Reference Matrix:** Use case ID → Classes involved → Methods called
+
+4. **Design Notes:** 
+   - Patterns observed in interactions
+   - Consistency issues discovered
+   - Updates needed to class diagrams (DOC 6.1-A)
+
+**Iterative Note:** Creating sequence diagrams often reveals missing or incorrect class designs. Return to step 6.1 to update class diagrams as needed, maintaining consistency between DOC 6.1-A and DOC 6.2-A throughout detailed design.

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk ls *)",
+      "Bash(dir D:\\\\Thuc Tap Co So\\\\ThucTapCoSo-frontend *)",
+      "Bash(rtk read *)",
+      "Bash(rtk prisma *)",
+      "Bash(node node_modules/.bin/prisma migrate diff --from-schema-datamodel prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script)",
+      "Bash(rtk npx *)",
+      "Bash(npx --yes *)",
+      "Bash(rtk npm *)",
+      "Bash(npm install *)"
+    ]
+  }
+}

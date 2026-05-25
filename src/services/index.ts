@@ -7,3 +7,4 @@ export * from "./job.service";
 export * from "./offer.service";
 export * from "./probation.service";
 export * from "./user.service";
+export { statsService } from "./stats.service";

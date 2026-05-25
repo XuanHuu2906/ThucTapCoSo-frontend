@@ -1,0 +1,134 @@
+5.4 Security Design
+
+Purpose:
+Define security mechanisms for authentication, authorization, data protection, and threat mitigation. Security must be designed into the architecture from the start—retrofitting security is expensive, risky, and often inadequate for compliance requirements.
+
+Prerequisite deliverables from previous steps:
+- DOC 3.2-A: Non-Functional Requirements Specification (from step 3.2)
+- DOC 4.3-A: System Architecture Diagram (from step 4.3)
+- DOC 5.1-A: Component Diagram (from step 5.1)
+- DOC 5.2-A: API Specification Document (from step 5.2)
+
+Tasks:
+
+Task 5.4.1: Design Authentication and Authorization
+    Use security NFRs (DOC 3.2-A) and API specifications (DOC 5.2-A) to define how users and systems prove identity and access controls.
+    
+    Guiding questions:
+    - What authentication mechanism meets security requirements? (from NFRs 3.2-A)
+    - Is multi-factor authentication required? (from compliance requirements in NFRs)
+    - What authorization model fits the access patterns? (RBAC, ABAC)
+    - How are API requests authenticated? (from API spec 5.2-A)
+    - What roles/permissions are needed?
+    - How are service-to-service calls authenticated?
+    
+    Acceptance criteria:
+    - Authentication mechanism specified: method, credentials, token format
+    - MFA approach defined if required by security NFRs
+    - Authorization model selected (RBAC recommended for most systems)
+    - Roles identified with permissions mapped to API endpoints (from 5.2-A)
+    - Service-to-service authentication defined (API keys, mutual TLS, OAuth client credentials)
+    - Session management strategy specified (timeout, renewal, logout)
+    - Password policy defined if applicable (complexity, expiration, history)
+    
+    Example:
+    "Authentication: JWT tokens via OAuth 2.0 (meets NFR-015 SSO requirement). Login returns access token (15 min TTL) and refresh token (7 days). MFA required for admin roles (NFR-016 compliance). Authorization: RBAC with roles: Customer (read own data), CSR (read/update customer data), Admin (full access). Permissions mapped to API endpoints: POST /orders requires 'orders:create' permission. Service-to-service: Mutual TLS between internal services."
+    
+    Red flags to watch for:
+    - Passwords stored in plain text or weak hashing (MD5, SHA1)
+    - No session timeout or overly long sessions
+    - Everyone has admin access (no role differentiation)
+    - No API authentication (public APIs without protection)
+
+Task 5.4.2: Design Data Protection and Encryption
+    Use security NFRs (DOC 3.2-A), component diagram (DOC 5.1-A), and architecture (DOC 4.3-A) to specify encryption, key management, and sensitive data handling across all components.
+    
+    Guiding questions:
+    - What data is sensitive? (PII, payment data, health data from NFRs)
+    - What encryption is required? (from compliance requirements in 3.2-A)
+    - Where is encryption needed? (in transit, at rest, application level)
+    - How are encryption keys managed? (where stored, rotation)
+    - Which components handle sensitive data? (from component diagram 5.1-A)
+    - What are the security boundaries? (from architecture diagram 4.3-A)
+    
+    Acceptance criteria:
+    - Encryption in transit specified (TLS 1.2+ for all external APIs from 5.2-A)
+    - Encryption at rest specified (database, backups, file storage)
+    - Sensitive data fields identified for encryption/masking
+    - Key management solution specified (AWS KMS, HashiCorp Vault, cloud provider)
+    - Key rotation policy defined
+    - Data masking rules for logs and non-production environments
+    - Security zones defined in architecture (DMZ, trusted, restricted)
+    
+    Example:
+    "Encryption in transit: TLS 1.3 for all APIs (meets NFR-012). Encryption at rest: Database encryption enabled (AES-256), backups encrypted. Sensitive fields: SSN, credit_card_number encrypted at application level before storage (meets PCI-DSS NFR-018). Key management: AWS KMS with automatic 90-day rotation. Logs: mask SSN (show last 4 digits only), never log passwords or tokens. Security zones: Public zone (API Gateway), DMZ (web servers), Trusted zone (application servers, databases)."
+    
+    Red flags to watch for:
+    - No encryption for sensitive data (violates compliance)
+    - Encryption keys hardcoded or in version control
+    - Sensitive data in logs or error messages
+    - Using deprecated protocols (TLS 1.0, SSL)
+
+Task 5.4.3: Define Security Controls and Threat Mitigations
+    Identify security threats based on architecture (DOC 4.3-A) and define controls, monitoring, and incident response procedures.
+    
+    Guiding questions:
+    - What are the attack vectors? (public APIs, admin interfaces, integrations)
+    - How do we prevent common attacks? (SQL injection, XSS, CSRF, DDoS)
+    - What security monitoring is needed? (from NFRs 3.2-A)
+    - What needs audit logging? (sensitive operations, compliance requirements)
+    - How do we detect and respond to security incidents?
+    
+    Acceptance criteria:
+    - Input validation rules defined (prevent SQL injection, XSS)
+    - Security headers specified (CSP, HSTS, X-Frame-Options)
+    - Rate limiting strategy for APIs (prevent DDoS, brute force)
+    - Audit logging requirements (what events, retention period from NFRs)
+    - Security monitoring alerts defined (failed auth attempts, anomalies)
+    - Incident response procedures outlined
+    - Vulnerability management process defined (scanning, patching)
+    
+    Example:
+    "Input validation: Parameterized queries only (prevent SQL injection), output encoding for all user content (prevent XSS). Security headers: Content-Security-Policy: default-src 'self', X-Frame-Options: DENY, Strict-Transport-Security. Rate limiting: 1000 req/hour per IP, 100 login attempts/hour. Audit log: all authentication events, data access, privilege changes, retained 7 years (NFR-020 compliance). Alerts: >10 failed logins in 5 min, privilege escalation, unauthorized data access. Incident response: security team notified within 15 min, documented playbooks for common scenarios."
+    
+    Red flags to watch for:
+    - No input validation (SQL injection vulnerable)
+    - No rate limiting (brute force attacks possible)
+    - No audit logging (compliance violation)
+    - No incident response plan (chaos during breach)
+
+Deliverable:
+DOC 5.4-A: Security Design Document
+
+Output format:
+Document containing (6-10 pages):
+
+1. **Security Overview:** Security goals, threat model summary, compliance requirements from NFRs (DOC 3.2-A)
+
+2. **Authentication Design:** Mechanism, flow diagrams, token format, MFA details, password policy, session management
+
+3. **Authorization Design:** Model (RBAC/ABAC), roles and permissions matrix, permission-to-API mapping (from 5.2-A), enforcement points in architecture
+
+4. **Data Protection:** 
+   - Encryption: in transit (TLS), at rest (database, files, backups), application-level
+   - Key management: solution, storage, rotation, access control
+   - Sensitive data: classification, handling rules, masking in logs
+
+5. **Security Controls:**
+   - Input validation and sanitization rules
+   - Output encoding (XSS prevention)
+   - Security headers
+   - CSRF protection
+   - Rate limiting and throttling
+
+6. **Audit Logging:** Events to log, format, retention period (from compliance NFRs), access controls, tamper protection
+
+7. **Security Monitoring:** Alerts, thresholds, notification channels, SIEM integration
+
+8. **Network Security:** Security zones from architecture (DOC 4.3-A), firewall rules, network segmentation
+
+9. **Secrets Management:** What secrets exist, where stored, access control, rotation
+
+10. **Incident Response:** Detection procedures, escalation paths, response playbooks, communication plan
+
+11. **Compliance Mapping:** Security controls mapped to compliance requirements (GDPR, HIPAA, PCI-DSS from NFRs)

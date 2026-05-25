@@ -1,0 +1,121 @@
+5.3 Physical Data Architecture
+
+Purpose:
+Transform the conceptual data model into physical database design with implementation details, selecting data types, defining keys, and organizing the database schema. This bridges the business-focused conceptual model and the production-ready detailed specifications created in step 6.4.
+
+Prerequisite deliverables from previous steps:
+- DOC 2.3-A: Conceptual ERD (from step 2.3)
+- DOC 3.1-A: Functional Requirements List (from step 3.1)
+- DOC 4.2-A: Technology Stack Decision Document (from step 4.2)
+- DOC 5.1-B: Component Responsibility Matrix (from step 5.1)
+
+Tasks:
+
+Task 5.3.1: Transform Conceptual Entities to Physical Tables
+    Use the conceptual ERD (DOC 2.3-A) and technology stack decision (DOC 4.2-A) to convert business entities into database tables with appropriate data types for the selected database platform.
+    
+    Guiding questions:
+    - What are the physical table names? (naming conventions)
+    - What data types does the selected database support? (from tech stack 4.2-A)
+    - What precision/length is needed for each attribute? (from requirements 3.1-A)
+    - Which attributes should be nullable vs required?
+    - Are there platform-specific considerations? (PostgreSQL vs MySQL vs MongoDB)
+    
+    Acceptance criteria:
+    - Each entity from conceptual ERD transformed to physical table
+    - Table naming convention defined and applied consistently
+    - Data types specified for each column using database-specific types
+    - Column lengths/precision specified (VARCHAR(255), DECIMAL(10,2))
+    - Nullability defined for each column (NOT NULL vs nullable)
+    - Audit columns added if needed (created_at, updated_at, created_by, updated_by)
+    
+    Example:
+    "Conceptual 'Customer' entity → physical 'customers' table (lowercase, plural). Attributes: customer_id (BIGINT), name (VARCHAR(100) NOT NULL), email (VARCHAR(255) NOT NULL), phone (VARCHAR(20)), registration_date (TIMESTAMP NOT NULL), created_at (TIMESTAMP DEFAULT NOW()), updated_at (TIMESTAMP)."
+    
+    Red flags to watch for:
+    - Inconsistent naming (mixed camelCase and snake_case)
+    - Insufficient column lengths (VARCHAR(10) for addresses)
+    - No consideration of internationalization (UTF-8 support)
+    - Missing audit columns for compliance requirements
+
+Task 5.3.2: Define Primary and Foreign Keys
+    Establish primary keys, foreign keys, and referential integrity constraints based on relationships from conceptual ERD (DOC 2.3-A).
+    
+    Guiding questions:
+    - What uniquely identifies each row? (natural key or surrogate)
+    - How are relationships implemented? (foreign keys)
+    - What referential integrity actions? (CASCADE, RESTRICT, SET NULL)
+    - Are composite keys needed? (multiple columns as primary key)
+    - Which columns need uniqueness constraints? (email, username)
+    
+    Acceptance criteria:
+    - Primary key defined for every table
+    - Foreign keys defined for all relationships from conceptual ERD
+    - Referential integrity actions specified (ON DELETE, ON UPDATE)
+    - Unique constraints identified (beyond primary keys)
+    - Many-to-many relationships implemented via junction tables
+    - Naming conventions for constraints defined (pk_, fk_, uk_ prefixes)
+    
+    Example:
+    "customers table: PRIMARY KEY (customer_id). orders table: PRIMARY KEY (order_id), FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE RESTRICT ON UPDATE CASCADE. order_items junction table: PRIMARY KEY (order_id, product_id), FOREIGN KEY (order_id) REFERENCES orders, FOREIGN KEY (product_id) REFERENCES products."
+    
+    Red flags to watch for:
+    - No primary key on tables
+    - Foreign keys without ON DELETE/UPDATE behavior defined
+    - Unresolved many-to-many relationships (missing junction tables)
+    - Circular foreign key dependencies
+
+Task 5.3.3: Map Data Ownership to Components and Organize Schema
+    Use component responsibility matrix (DOC 5.1-B) to assign table ownership and organize schema structure for data access patterns.
+    
+    Guiding questions:
+    - Which component owns which tables? (from component diagram)
+    - Should tables be grouped into separate schemas/databases? (microservices)
+    - Are there shared reference tables? (lookup data)
+    - Is partitioning needed for large tables? (date-based, hash-based)
+    - What's the data access boundary for each component?
+    
+    Acceptance criteria:
+    - Each table assigned to owning component from DOC 5.1-B
+    - Schema organization defined (single schema vs multiple schemas)
+    - Shared/reference tables identified and access rules defined
+    - Partitioning strategy specified for high-volume tables if needed
+    - Cross-component data access rules established (direct vs via API)
+    - Naming reflects ownership where applicable
+    
+    Example:
+    "order_service schema owns: orders, order_items, order_status_history. customer_service schema owns: customers, customer_addresses. Shared schema owns: countries, states (reference data, read-only for all). orders table partitioned by order_date (monthly partitions for archival). Rule: Components access only their own schema directly, cross-component access via APIs only."
+    
+    Red flags to watch for:
+    - Multiple components sharing write access to same tables (tight coupling)
+    - No partitioning strategy for tables expected to have millions of rows
+    - Unclear ownership (multiple components claim same table)
+    - Microservices architecture with shared database (defeats purpose)
+
+Deliverables:
+- DOC 5.3-A: Physical ERD
+- DOC 5.3-B: Database Schema Specification
+
+Output format:
+
+DOC 5.3-A: Physical ERD (2-3 pages)
+1. **Physical ERD Diagram:** All tables with columns, data types, primary keys (underlined), foreign keys (arrows), NOT NULL indicators, organized by schema/ownership
+2. **Notation Legend:** Symbols for PK, FK, NOT NULL, unique constraints
+3. **Schema Organization:** Visual grouping showing which tables belong to which component/schema
+
+DOC 5.3-B: Database Schema Specification (4-6 pages)
+1. **Database Platform:** Selected database from tech stack (DOC 4.2-A), version, configuration notes
+2. **Naming Conventions:** Tables, columns, constraints, indexes naming rules
+3. **Table Specifications:** For each table:
+   - Table name and owning component
+   - Purpose/description
+   - Columns with: name, data type, length/precision, nullability, default value
+   - Primary key definition
+   - Foreign key definitions with referential actions
+   - Unique constraints
+   - Estimated row volume
+4. **Schema Organization:** Schema/database names, purpose, tables contained, access rules
+5. **Partitioning Strategy:** Which tables, partition key, partition type, retention policy
+6. **Shared/Reference Data:** Common lookup tables, update frequency, ownership
+
+**Note:** Detailed specifications (complete data dictionary, indexes, constraints, DDL scripts) will be completed in step 6.4 Database Design Details. This document establishes the physical structure and organization.

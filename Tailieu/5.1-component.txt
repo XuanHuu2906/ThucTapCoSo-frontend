@@ -1,0 +1,106 @@
+5.1 Component Design
+
+Purpose:
+Break down the high-level architecture into detailed components with clearly defined responsibilities and interfaces. This step transforms the architectural blueprint into specific, implementable modules that development teams can build independently.
+
+Prerequisite deliverables from previous steps:
+- DOC 3.1-A: Functional Requirements List (from step 3.1)
+- DOC 3.3-A: UI Wireframes Document (from step 3.3)
+- DOC 4.3-A: System Architecture Diagram (from step 4.3)
+
+Tasks:
+
+Task 5.1.1: Decompose Major Components into Detailed Components
+    Use the system architecture diagram (DOC 4.3-A) to break each major component/subsystem into smaller, cohesive sub-components with specific responsibilities.
+    
+    Guiding questions:
+    - What are the distinct responsibilities within each major component?
+    - Which functional requirements (from 3.1-A) does each component fulfill?
+    - What UI screens (from 3.3-A) require backend components?
+    - What components handle business logic vs data access vs presentation?
+    - Can components be developed and tested independently?
+    
+    Acceptance criteria:
+    - Each major component from architecture diagram broken into 3-8 detailed components
+    - Each component has single, clear responsibility (high cohesion)
+    - Components organized by layer: presentation, application/business, data access
+    - UI components mapped to wireframes from DOC 3.3-A
+    - Backend components support functional requirements from DOC 3.1-A
+    - Total 15-30 detailed components identified across system
+    
+    Example:
+    "Order Service (from architecture) decomposed into: OrderController (REST endpoints), OrderValidator (validation rules), OrderProcessor (business logic), PaymentOrchestrator (coordinates payment), OrderRepository (data access), OrderNotifier (events). Each maps to functional requirements: OrderValidator implements REQ-012 (address validation), OrderProcessor implements REQ-015 (order total calculation)."
+    
+    Red flags to watch for:
+    - Components too granular (one class per component - too fine-grained)
+    - Components too coarse (entire layer in one component)
+    - Unclear responsibilities (component does "everything for orders")
+    - Missing components needed for functional requirements
+
+Task 5.1.2: Define Component Interfaces and Dependencies
+    Specify what each component exposes (public interface) and what it depends on (other components, external systems, databases).
+    
+    Guiding questions:
+    - What operations does each component provide? (public methods/APIs)
+    - What does each component need from others? (dependencies)
+    - Which components communicate? (from architecture diagram communication patterns)
+    - Are dependencies unidirectional? (avoid circular dependencies)
+    - What data does each component need/produce?
+    
+    Acceptance criteria:
+    - Public interface defined for each component (methods/APIs it exposes)
+    - Dependencies listed for each component (what it calls/uses)
+    - Component dependency diagram shows relationships with arrows
+    - Circular dependencies identified and eliminated
+    - External dependencies (databases, message queues, APIs) clearly marked
+    - Dependency direction follows layering rules (upper layers depend on lower, not reverse)
+    
+    Example:
+    "OrderController exposes: createOrder(orderData), getOrder(orderId), updateOrder(orderId, changes). Depends on: OrderValidator, OrderProcessor, AuthenticationService. OrderProcessor exposes: processOrder(order), calculateTotal(items). Depends on: PaymentOrchestrator, OrderRepository, ProductService (for pricing)."
+    
+    Red flags to watch for:
+    - Circular dependencies (A → B → A)
+    - Too many dependencies (component coupled to everything)
+    - Violating layering (data access layer calling presentation layer)
+    - Missing dependencies (component needs data but no source identified)
+
+Task 5.1.3: Create Component Responsibility Matrix
+    Map each component to the functional requirements (DOC 3.1-A) it implements and the architectural responsibilities it fulfills.
+    
+    Guiding questions:
+    - Which functional requirements does each component implement?
+    - Are all functional requirements covered by at least one component?
+    - Are responsibilities distributed appropriately? (no god components)
+    - Which components are most complex? (many requirements = high risk)
+    
+    Acceptance criteria:
+    - Matrix created with components as rows, functional requirements as columns
+    - Each component mapped to 2-8 functional requirements (not too few/many)
+    - All functional requirements from DOC 3.1-A covered by components
+    - No single component responsible for >20% of requirements (avoid god component)
+    - Complex components flagged for special attention in detailed design
+    
+    Example:
+    "OrderController: REQ-006, REQ-007, REQ-008 (order CRUD operations). OrderValidator: REQ-012, REQ-013 (address validation). OrderProcessor: REQ-015, REQ-016, REQ-018 (business logic, calculations). Coverage analysis: All 30 requirements covered, most distributed across 3-5 components, OrderProcessor highest complexity (8 requirements)."
+    
+    Red flags to watch for:
+    - Requirements not covered by any component (gap)
+    - One component handles many unrelated requirements (god component)
+    - Requirements split across too many components (excessive coupling)
+
+Deliverables:
+- DOC 5.1-A: Component Diagram
+- DOC 5.1-B: Component Responsibility Matrix
+
+Output format:
+
+DOC 5.1-A: Component Diagram (3-4 pages)
+1. **Component Hierarchy:** Tree view showing decomposition from major components (architecture diagram) to detailed components
+2. **Component Diagram:** UML component diagram showing all detailed components, interfaces (lollipop notation), and dependencies (arrows)
+3. **Component Catalog:** Table with Component Name, Layer, Responsibility, Public Interface, Dependencies, Technology
+4. **External Dependencies:** Components' dependencies on databases, message queues, external APIs
+
+DOC 5.1-B: Component Responsibility Matrix (2-3 pages)
+1. **Requirements Coverage Matrix:** Rows = components, Columns = functional requirement IDs (from DOC 3.1-A), Cells = checkmarks or role (primary/supporting)
+2. **Component Complexity Analysis:** Components ranked by number of requirements, flagged if high complexity
+3. **Completeness Check:** All functional requirements accounted for, gaps identified

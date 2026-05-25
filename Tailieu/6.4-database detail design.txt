@@ -1,0 +1,127 @@
+6.4 Database Design Details
+
+Purpose:
+Complete all database specifications for production including detailed data dictionary, comprehensive constraints, index optimization, and DDL scripts. This step transforms the physical data architecture from step 5.3 into production-ready database specifications developers can execute.
+
+Prerequisite deliverables from previous steps:
+- DOC 3.1-A: Functional Requirements List (from step 3.1)
+- DOC 5.2-A: API Specification Document (from step 5.2)
+- DOC 5.3-A: Physical ERD (from step 5.3)
+- DOC 5.3-B: Database Schema Specification (from step 5.3)
+
+Tasks:
+
+Task 6.4.1: Create Complete Data Dictionary
+    Expand the database schema specification (DOC 5.3-B) with comprehensive field-level details including descriptions, valid values, and sample data.
+    
+    Guiding questions:
+    - What does each field mean in business terms?
+    - What are valid values or ranges? (from functional requirements 3.1-A)
+    - What are examples of valid data?
+    - What fields contain sensitive data? (encryption needed)
+    - What fields are used for business rules? (from requirements)
+    
+    Acceptance criteria:
+    - Every column documented with: name, data type, length/precision, nullable, default value, description, valid values/range, example data, sensitivity classification
+    - Enumeration values listed for status/type fields
+    - Computed/derived fields documented with calculation logic
+    - Foreign key relationships documented with business meaning
+    - Sample data provided for each table
+    
+    Example:
+    "orders.order_status: VARCHAR(20) NOT NULL DEFAULT 'PENDING'. Description: Current status of order in workflow. Valid values: PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED. Example: 'CONFIRMED'. Business rule: Status transitions follow REQ-025 state machine. Sensitivity: Internal use only."
+    
+    Red flags to watch for:
+    - Fields without descriptions (future maintainers won't understand)
+    - No validation ranges documented (allows invalid data)
+    - Missing sensitive data classification (security risk)
+
+Task 6.4.2: Design Complete Index Strategy
+    Use API specifications (DOC 5.2-A) and functional requirements (DOC 3.1-A) to define comprehensive indexing supporting all query patterns efficiently.
+    
+    Guiding questions:
+    - What queries are most frequent? (from API endpoints in 5.2-A)
+    - What columns appear in WHERE clauses? (from requirements)
+    - What columns are used in JOINs?
+    - What columns need ORDER BY/GROUP BY?
+    - What's the read/write ratio? (heavy writes need fewer indexes)
+    - What queries are slowest? (prioritize these for indexing)
+    
+    Acceptance criteria:
+    - Index defined for every foreign key
+    - Indexes defined for frequently queried columns (from API spec)
+    - Composite indexes for multi-column queries
+    - Unique indexes for uniqueness constraints
+    - Each index justified with specific query patterns from API spec
+    - Index naming convention applied consistently (idx_tablename_columns)
+    - Covering indexes identified where beneficial
+    - Index impact on write performance considered
+    
+    Example:
+    "CREATE INDEX idx_orders_customer_date ON orders(customer_id, order_date DESC). Justification: Supports GET /api/v1/orders?customerId={id} (API endpoint from 5.2-A showing customer's recent orders, sorted by date). Composite index avoids sort operation. CREATE UNIQUE INDEX idx_customers_email ON customers(email). Justification: Enforces unique email (REQ-003) and supports login query."
+    
+    Red flags to watch for:
+    - No indexes on foreign keys (JOIN performance issues)
+    - Over-indexing (every column indexed, hurts write performance)
+    - No justification for indexes (arbitrary decisions)
+    - Missing indexes for API query patterns from 5.2-A
+
+Task 6.4.3: Define Complete Constraints and Write DDL Scripts
+    Specify all check constraints, defaults, and triggers, then create production-ready DDL scripts for database creation.
+    
+    Guiding questions:
+    - What business rules need database constraints? (from requirements 3.1-A)
+    - What check constraints validate data? (price > 0, date ranges)
+    - What default values simplify application code?
+    - What triggers maintain data integrity? (audit timestamps)
+    - What sequences/identity columns generate keys?
+    
+    Acceptance criteria:
+    - Check constraints defined for validation rules (from requirements)
+    - Default values specified for appropriate columns
+    - Triggers documented if needed (audit, denormalization)
+    - Sequences/identity columns defined for auto-increment keys
+    - DDL scripts created in order: schemas, tables, indexes, foreign keys, constraints
+    - Scripts are idempotent (can run multiple times safely)
+    - Rollback scripts provided
+    - Scripts tested on target database platform
+    
+    Example:
+    "CHECK constraint: CHECK (unit_price >= 0.01) enforces REQ-018 'prices must be positive'. Default: created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP. Trigger: audit_trigger updates updated_at on row modification. DDL script structure: 01_create_schemas.sql, 02_create_tables.sql, 03_create_indexes.sql, 04_create_foreign_keys.sql, 05_create_constraints.sql, 06_seed_reference_data.sql."
+    
+    Red flags to watch for:
+    - No check constraints (validation only in application)
+    - Scripts create foreign keys before tables exist (wrong order)
+    - No rollback scripts (can't undo deployment)
+    - Scripts not tested on target database
+
+Deliverables:
+- DOC 6.4-A: Complete Data Dictionary
+- DOC 6.4-B: DDL Scripts
+
+Output format:
+
+DOC 6.4-A: Complete Data Dictionary (15-30 pages)
+1. **Database Overview:** Platform version, character set, collation
+2. **Complete Table Specifications:** For each table:
+   - Table name, schema, purpose, estimated rows
+   - **Complete Column Specifications:** Column name, data type with precision, nullable, default value, description, valid values/ranges, constraints, example data, sensitivity classification, indexed (yes/no)
+   - Primary key definition
+   - Foreign keys with descriptions
+   - Unique constraints
+   - Check constraints with business rule references
+   - Indexes with justification
+3. **Reference Data:** Lookup tables with complete enumeration values
+4. **Sensitive Data Catalog:** All fields containing PII, payment data, or sensitive information with encryption requirements
+
+DOC 6.4-B: DDL Scripts (actual .sql files)
+1. **Schema Creation:** Scripts to create schemas/databases
+2. **Table Creation:** CREATE TABLE statements with all columns, data types, constraints
+3. **Index Creation:** CREATE INDEX statements with all indexes
+4. **Foreign Key Creation:** ALTER TABLE statements adding foreign keys
+5. **Additional Constraints:** Check constraints, triggers, sequences
+6. **Reference Data:** INSERT statements for lookup tables
+7. **Rollback Scripts:** DROP statements in reverse order
+8. **README:** Execution order, prerequisites, test verification queries
+
+**Note:** Scripts should be version-controlled, include comments referencing requirements, and be tested on target database platform before deployment.

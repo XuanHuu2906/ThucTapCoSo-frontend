@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { LockKeyhole, Mail, ArrowLeft, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { authService } from "@/services/auth.service";
 import { ROLE_DASHBOARD } from "@/routes/routes.config";
 
 export default function Login() {
@@ -17,10 +18,10 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (view === "login") {
-      setIsSubmitting(true);
-      setError("");
+    setIsSubmitting(true);
+    setError("");
 
+    if (view === "login") {
       try {
         const user = await login({ email, password });
         const from = (location.state as { from?: { pathname?: string } } | null)?.from
@@ -32,7 +33,14 @@ export default function Login() {
         setIsSubmitting(false);
       }
     } else {
-      setIsSent(true);
+      try {
+        await authService.forgotPassword(email);
+        setIsSent(true);
+      } catch {
+        setError("Có lỗi xảy ra. Vui lòng thử lại sau.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 

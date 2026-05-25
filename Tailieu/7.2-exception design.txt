@@ -1,0 +1,131 @@
+7.2 Error Handling Design
+
+Purpose:
+Define comprehensive error handling strategy for consistent error management across the system. Well-designed error handling ensures users receive helpful feedback, developers can quickly diagnose issues, and the system fails gracefully without exposing sensitive information or security vulnerabilities.
+
+Prerequisite deliverables from previous steps:
+- DOC 2.1-B: Use Case Specifications Document (from step 2.1)
+- DOC 5.2-A: API Specification Document (from step 5.2)
+- DOC 6.1-A: Detailed Class Diagrams (from step 6.1)
+
+Tasks:
+
+Task 7.2.1: Define Exception Hierarchy and Error Categories
+    Use use case exception flows (DOC 2.1-B) and class design (DOC 6.1-A) to categorize errors and design exception class hierarchy.
+    
+    Guiding questions:
+    - What types of errors can occur? (validation, business rule, system, integration)
+    - How are exceptions related? (inheritance hierarchy)
+    - Which errors are recoverable vs fatal?
+    - Which errors indicate client mistakes vs server problems?
+    - What information should each exception carry?
+    
+    Acceptance criteria:
+    - Base exception class defined for application
+    - Exception categories defined: ValidationException, BusinessRuleException, SystemException, IntegrationException, NotFoundException, AuthorizationException
+    - Inheritance hierarchy designed (specialized exceptions extend base)
+    - Each exception class includes: error code, message, timestamp, optional details/context
+    - Checked vs unchecked strategy defined (language-dependent)
+    - Exception flows from use cases (2.1-B) mapped to exception types
+    
+    Example:
+    "Exception hierarchy: ApplicationException (base) → ValidationException (invalid input, maps to HTTP 400), BusinessRuleException (e.g., InsufficientInventoryException, maps to HTTP 422), SystemException (database failures, maps to HTTP 500), IntegrationException (external API failures, maps to HTTP 502/503), NotFoundException (resource not found, maps to HTTP 404), AuthorizationException (permission denied, maps to HTTP 403). Each includes: errorCode, message, timestamp, requestId, optionalDetails."
+    
+    Red flags to watch for:
+    - Generic exceptions only (no specific error types)
+    - Too many exception classes (over-engineering)
+    - Exceptions not mapped to use case exception flows
+    - Missing exception information (hard to diagnose)
+
+Task 7.2.2: Design Error Codes and User-Facing Messages
+    Create comprehensive error code catalog with user-friendly messages and developer details, using API specifications (DOC 5.2-A) for consistency.
+    
+    Guiding questions:
+    - What error codes do we need? (one per error type)
+    - What do users need to know? (what happened, what to do)
+    - What do developers need to know? (technical details for debugging)
+    - How do error codes map to HTTP status codes? (for APIs from 5.2-A)
+    - What language/tone for error messages? (helpful, not technical jargon)
+    
+    Acceptance criteria:
+    - Error code naming convention defined (UPPER_SNAKE_CASE)
+    - 20-30 error codes defined covering common scenarios
+    - Each error code includes: code, HTTP status, user message, developer message, suggested action
+    - User messages friendly and actionable (no stack traces, no technical details)
+    - Developer messages detailed (include context for debugging)
+    - Error codes mapped to API endpoints from DOC 5.2-A
+    - Internationalization considered (message keys, not hardcoded text)
+    
+    Example:
+    "INVALID_EMAIL: HTTP 400. User message: 'Email address format is invalid. Please check and try again.' Developer message: 'Email validation failed: {email}. Regex pattern: {pattern}.' Suggested action: 'Verify email format includes @ and valid domain.'
+
+    INSUFFICIENT_INVENTORY: HTTP 422. User message: 'Sorry, we only have {availableQuantity} items in stock. Please adjust your order.' Developer message: 'Inventory check failed. ProductId: {productId}, Requested: {requestedQty}, Available: {availableQty}.' Suggested action: 'Reduce quantity or check back later.'
+
+    DATABASE_CONNECTION_FAILED: HTTP 500. User message: 'We're experiencing technical difficulties. Please try again in a few moments.' Developer message: 'Database connection timeout after {timeoutMs}ms. Connection pool exhausted. Host: {dbHost}.' Suggested action: 'User: retry. Developer: check database health, connection pool settings.'"
+    
+    Red flags to watch for:
+    - Technical jargon in user messages (confusing)
+    - Exposing internal details to users (security risk)
+    - Generic error messages only ("An error occurred")
+    - No suggested actions (users don't know what to do)
+
+Task 7.2.3: Define Error Handling Patterns and Logging Strategy
+    Specify how errors are caught, logged, and propagated through system layers using class design from DOC 6.1-A.
+    
+    Guiding questions:
+    - Where should errors be caught? (at layer boundaries)
+    - What should be logged at each level? (ERROR, WARN, INFO)
+    - How do errors propagate between layers?
+    - When to retry vs fail immediately?
+    - How are errors returned to clients? (API error response format from 5.2-A)
+    - What's the global exception handler strategy?
+    
+    Acceptance criteria:
+    - Layer-specific error handling defined: presentation layer (catch all, return formatted response), business layer (catch and wrap with context), data layer (let propagate or wrap integration errors)
+    - Logging levels specified per error type: ValidationException (INFO), BusinessRuleException (WARN), SystemException (ERROR)
+    - Retry strategy defined: transient failures (network timeouts) with exponential backoff, non-transient failures (validation) fail immediately
+    - Global exception handler specified for uncaught exceptions
+    - Error response format standardized (matches API spec 5.2-A)
+    - Circuit breaker pattern for external integrations
+    - Sensitive data scrubbing rules (never log passwords, tokens, PII)
+    
+    Example:
+    "Error handling layers: Controller catches all exceptions, maps to HTTP response using error code catalog, logs with correlation ID. Service layer catches data/integration exceptions, adds business context, re-throws as BusinessRuleException with original cause. Repository lets SQLException propagate (wrapped as SystemException at service boundary). 
+
+    Logging: ValidationException → INFO log 'Validation failed: {details}', BusinessRuleException → WARN log with business context, SystemException → ERROR log with full stack trace, IntegrationException → ERROR with external system details.
+
+    Retry: Transient failures (HTTP 5xx, timeouts) retry 3 times with exponential backoff (100ms, 400ms, 1600ms). ValidationException, BusinessRuleException never retry. Circuit breaker opens after 5 consecutive failures, half-open after 30 seconds.
+
+    Standard error response (matches 5.2-A): { error: { code, message, details[], timestamp, requestId } }. Never expose stack traces to clients."
+    
+    Red flags to watch for:
+    - Catching and swallowing exceptions (silent failures)
+    - Logging sensitive data (security violation)
+    - Retrying non-idempotent operations (data corruption)
+    - Stack traces exposed to users (information leakage)
+
+Deliverable:
+DOC 7.2-A: Error Handling Specification
+
+Output format:
+Document containing (8-12 pages):
+
+1. **Error Handling Overview:** Philosophy, goals, scope
+
+2. **Exception Class Hierarchy:** UML diagram showing exception inheritance, each class with attributes (errorCode, message, timestamp, details)
+
+3. **Error Code Catalog:** Table with columns: Error Code, HTTP Status, User Message, Developer Message, Suggested Action, Related Exception Class. 20-30 entries covering validation errors, business rule violations, system errors, integration failures, not found, authorization failures
+
+4. **Error Response Format:** JSON structure for API responses (from 5.2-A), examples for each error category
+
+5. **Layer-Specific Handling:** For each layer (presentation, business, data): what to catch, what to log, how to transform/propagate errors
+
+6. **Logging Strategy:** What to log per error type, log level, required context (correlation IDs, user IDs), sensitive data exclusions
+
+7. **Retry and Circuit Breaker Policies:** Which errors retry, backoff strategy, circuit breaker thresholds, timeout values
+
+8. **Global Exception Handler:** Catches uncaught exceptions, logs, returns generic error to client
+
+9. **Error Handling Patterns:** Try-catch guidelines, exception chaining, fail-fast vs graceful degradation
+
+10. **Monitoring and Alerting:** Error rate thresholds triggering alerts, error tracking integration (Sentry, Rollbar)

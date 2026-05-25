@@ -6,6 +6,8 @@ import {
   GraduationCap,
   LayoutDashboard,
   Users,
+  Settings,
+  UserCog,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { UserRole } from "@/types";
@@ -13,6 +15,7 @@ import type { UserRole } from "@/types";
 export const ROUTES = {
   home: "/",
   login: "/login",
+  resetPassword: "/reset-password/:token",
   jobDetail: "/jobs/:id",
   recruiter: {
     dashboard: "/recruiter/dashboard",
@@ -35,11 +38,16 @@ export const ROUTES = {
   probationer: {
     dashboard: "/probationer/dashboard",
   },
+  admin: {
+    dashboard: "/admin/dashboard",
+    users: "/admin/users",
+  },
 } as const;
 
 export const getJobDetailPath = (id: string | number) => `/jobs/${id}`;
 
 export const ROLE_DASHBOARD: Record<UserRole, string> = {
+  admin: ROUTES.admin.dashboard,
   recruiter: ROUTES.recruiter.dashboard,
   manager: ROUTES.manager.dashboard,
   director: ROUTES.director.dashboard,
@@ -53,6 +61,10 @@ export type DashboardNavItem = {
 };
 
 export const DASHBOARD_NAV_ITEMS: Record<UserRole, DashboardNavItem[]> = {
+  admin: [
+    { to: ROUTES.admin.dashboard, label: "Dashboard", icon: LayoutDashboard },
+    { to: ROUTES.admin.users, label: "Quản lý người dùng", icon: UserCog },
+  ],
   recruiter: [
     { to: ROUTES.recruiter.dashboard, label: "Dashboard", icon: LayoutDashboard },
     { to: ROUTES.recruiter.jobs, label: "Tin tuyển dụng", icon: Briefcase },
