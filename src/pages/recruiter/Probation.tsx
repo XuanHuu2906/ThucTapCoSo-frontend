@@ -351,11 +351,8 @@ const Probation: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Quản lý thử việc
+            Quản Lý Thử Việc
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Theo dõi tiến độ và đánh giá nhân viên thử việc (UC-11)
-          </p>
         </div>
         <button
           onClick={exportToExcel}

@@ -5,6 +5,7 @@ export type HiringManagerOption = {
   fullName: string;
   email: string;
   role: string;
+  department?: string;
   status: string;
 };
 
@@ -13,6 +14,7 @@ type BackendUser = {
   fullName: string;
   email: string;
   role: string;
+  department?: string;
   status: string;
 };
 
@@ -21,6 +23,7 @@ const mapHiringManager = (user: BackendUser): HiringManagerOption => ({
   fullName: user.fullName,
   email: user.email,
   role: user.role,
+  department: user.department,
   status: user.status,
 });
 
@@ -34,5 +37,10 @@ export const userService = {
     });
 
     return unwrapResponse(response).map(mapHiringManager);
+  },
+
+  async getDepartments(): Promise<string[]> {
+    const response = await api.get<string[]>("/users/departments");
+    return unwrapResponse(response);
   },
 };

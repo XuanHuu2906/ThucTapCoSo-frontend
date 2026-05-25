@@ -17,6 +17,7 @@ import InterviewResponse from "@/pages/candidate/InterviewResponse";
 import OfferResponse from "@/pages/candidate/OfferResponse";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminUserManagement from "@/pages/admin/UserManagement";
+import AdminSystemConfig from "@/pages/admin/SystemConfig";
 import ProbationerDashboard from "@/pages/probationer/Dashboard";
 import RecruiterCandidates from "@/pages/recruiter/Candidates";
 import RecruiterDashboard from "@/pages/recruiter/Dashboard";
@@ -93,6 +94,7 @@ const AppRoutes = () => {
       >
         <Route path={ROUTES.admin.dashboard} element={<AdminDashboard />} />
         <Route path={ROUTES.admin.users} element={<AdminUserManagement />} />
+        <Route path={ROUTES.admin.config} element={<AdminSystemConfig />} />
       </Route>
 
       <Route

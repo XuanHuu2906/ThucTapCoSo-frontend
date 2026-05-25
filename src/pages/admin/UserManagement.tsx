@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Users, Mail, Shield, AlertCircle } from "lucide-react";
 import api, { unwrapResponse } from "@/services/api";
+import { userService } from "@/services";
 import toast from "react-hot-toast";
 
 type SystemUser = {
@@ -8,6 +9,7 @@ type SystemUser = {
   fullName: string;
   email: string;
   role: string;
+  department?: string;
   status: string;
 };
 
@@ -31,19 +33,35 @@ export default function UserManagement() {
   const [users, setUsers] = useState<SystemUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [formData, setFormData] = useState({ fullName: "", email: "", password: "", role: "Recruiter" });
+  const [formData, setFormData] = useState({ fullName: "", email: "", role: "Recruiter", department: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [departments, setDepartments] = useState<string[]>([]);
 
-  const fetchUsers = () => {
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        setCurrentUser(JSON.parse(userStr));
+      } catch (e) {}
+    }
+  }, []);
+
+  const fetchUsers = async () => {
     setIsLoading(true);
-    api.get("/users")
-      .then((res) => {
-        const data = unwrapResponse(res);
-        setUsers(data);
-      })
-      .catch(() => toast.error("Không thể tải danh sách người dùng"))
-      .finally(() => setIsLoading(false));
+    try {
+      const [res, deptList] = await Promise.all([
+        api.get("/users"),
+        userService.getDepartments()
+      ]);
+      setUsers(unwrapResponse(res));
+      setDepartments(deptList);
+    } catch (err) {
+      toast.error("Không thể tải danh sách người dùng");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => { fetchUsers(); }, []);
@@ -54,16 +72,59 @@ export default function UserManagement() {
     setError("");
 
     try {
-      await api.post("/auth/register", formData);
-      toast.success("Tạo người dùng thành công!");
+      await api.post("/users", formData);
+      toast.success("Tạo người dùng thành công! Email thiết lập mật khẩu đã được gửi.");
       setShowCreateModal(false);
-      setFormData({ fullName: "", email: "", password: "", role: "Recruiter" });
+      setFormData({ fullName: "", email: "", role: "Recruiter", department: "" });
       fetchUsers();
     } catch (err: any) {
       setError(err?.response?.data?.message || "Có lỗi xảy ra.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleToggleStatus = async (userId: number, currentStatus: string) => {
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    try {
+      await api.put(`/users/${userId}`, { status: newStatus });
+      toast.success(`Đã ${newStatus === "Active" ? "mở khóa" : "khóa"} tài khoản`);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+    }
+  };
+
+  const handleResetPassword = (userId: number) => {
+    toast((t) => (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+          Bạn có chắc chắn muốn gửi email đặt lại mật khẩu cho người dùng này?
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await api.post(`/users/${userId}/reset-password`);
+                toast.success("Email thiết lập lại mật khẩu đã được gửi!");
+              } catch (err: any) {
+                toast.error(err?.response?.data?.message || "Lỗi khi gửi email đặt lại mật khẩu");
+              }
+            }}
+            className="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 rounded-lg transition shadow-sm"
+          >
+            Xác nhận
+          </button>
+        </div>
+      </div>
+    ), { duration: 8000, position: "top-center" });
   };
 
   return (
@@ -96,7 +157,9 @@ export default function UserManagement() {
                 <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Họ tên</th>
                 <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
                 <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Vai trò</th>
+                <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Phòng ban</th>
                 <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -115,13 +178,40 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {user.department || "-"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       user.status === "Active"
                         ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                         : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                     }`}>
-                      {user.status === "Active" ? "Hoạt động" : "Không hoạt động"}
+                      {user.status === "Active" ? "Hoạt động" : "Bị khóa"}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleResetPassword(user.userId)}
+                        disabled={user.status !== "Active"}
+                        className="text-xs font-medium text-blue-600 hover:underline disabled:opacity-50 disabled:no-underline"
+                      >
+                        Reset Pass
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(user.userId, user.status)}
+                        disabled={currentUser?.userId === user.userId}
+                        className={`text-xs font-medium px-2 py-1 rounded ${
+                          user.status === "Active" 
+                            ? "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20" 
+                            : "bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/20"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {user.status === "Active" ? "Khóa" : "Mở khóa"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -172,19 +262,6 @@ export default function UserManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Mật khẩu</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 text-sm text-slate-900 dark:text-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  placeholder="Tối thiểu 6 ký tự"
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Vai trò</label>
                 <select
                   value={formData.role}
@@ -195,6 +272,20 @@ export default function UserManagement() {
                   <option value="HiringManager">Trưởng bộ phận</option>
                   <option value="Director">Giám đốc</option>
                   <option value="Admin">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Phòng ban</label>
+                <select
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 text-sm text-slate-900 dark:text-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                >
+                  <option value="">-- Chọn phòng ban (Nếu có) --</option>
+                  {departments.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
                 </select>
               </div>
 

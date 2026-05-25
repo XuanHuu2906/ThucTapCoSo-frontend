@@ -10,7 +10,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { offerService, probationService } from "@/services";
-import { formatDate } from "@/utils/date";
+import { unwrapResponse } from "@/services/api";
+import toast from "react-hot-toast";
 import {
   Table,
   TableBody,
@@ -78,62 +79,65 @@ export default function Approvals() {
   const [selectedOffer, setSelectedOffer] = useState<OfferItem | null>(null);
   const [selectedProbation, setSelectedProbation] = useState<ProbationItem | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      offerService.getOffers({ status: "pending_approval" }),
-      probationService.getProbationers({ status: "pending_evaluation" }),
-    ])
-      .then(([offers, probations]) => {
-        // API đã filter sẵn, chỉ trả về offer đang chờ duyệt
-        setOfferData(
-          offers.map((offer) => ({
-            id: Number(offer.id),
-            candidate: offer.candidateName,
-            position: offer.jobTitle,
-            department: "",
-            proposedSalary: `${Number(offer.baseSalary).toLocaleString("vi-VN")} ${offer.currency}`,
-            recruiter: offer.createdBy,
-            status: "Chờ duyệt",
-            allowance: `${Number(offer.allowance || 0).toLocaleString("vi-VN")} VND`,
-            startDate: formatDate(offer.startDate),
-            email: offer.candidateEmail,
-          }))
-        );
+  const fetchApprovals = async () => {
+    try {
+      const [offers, probations] = await Promise.all([
+        offerService.getOffers({ status: "pending_approval" }),
+        probationService.getProbationers({ status: "pending_evaluation" }),
+      ]);
 
-        // API đã filter sẵn, chỉ trả về probation chờ Director duyệt
-        setProbationData(
-          probations.map((probation) => ({
-            id: Number(probation.id),
-            employee: probation.fullName,
-            position: probation.jobTitle,
-            department: probation.department,
-            endDate: formatDate(probation.endDate),
-            managerRecommendation: probation.evaluation?.recommendation === "terminate" ? "Chấm dứt thử việc" : "Ký hợp đồng chính thức",
-            result: "Chờ phê duyệt Director",
-            startDate: formatDate(probation.startDate),
-            supervisorName: probation.supervisorName || "Không rõ",
-            kpiScore: probation.evaluation?.kpiScore ?? 0,
-            managerComment: probation.evaluation?.comment ?? "Không có nhận xét chi tiết",
-            email: probation.email,
-            phone: probation.phone,
-          }))
-        );
-      })
-      .catch((err) => {
-        console.error("[Approvals] Load error:", err);
-        setError("Không thể tải dữ liệu phê duyệt. Vui lòng thử lại.");
-      })
-      .finally(() => setLoading(false));
+      setOfferData(
+        offers.map((offer: any) => ({
+          id: Number(offer.id),
+          candidate: offer.candidateName,
+          position: offer.jobTitle,
+          department: "",
+          proposedSalary: `${Number(offer.baseSalary).toLocaleString("vi-VN")} ${offer.currency}`,
+          recruiter: offer.createdBy,
+          status: "Chờ duyệt",
+          allowance: `${Number(offer.allowance || 0).toLocaleString("vi-VN")} VND`,
+          startDate: formatDate(offer.startDate),
+          email: offer.candidateEmail,
+        }))
+      );
+
+      setProbationData(
+        probations.map((probation: any) => ({
+          id: Number(probation.id),
+          employee: probation.fullName,
+          position: probation.jobTitle,
+          department: probation.department,
+          endDate: formatDate(probation.endDate),
+          managerRecommendation: probation.evaluation?.recommendation === "terminate" ? "Chấm dứt thử việc" : "Ký hợp đồng chính thức",
+          result: "Chờ phê duyệt Director",
+          startDate: formatDate(probation.startDate),
+          supervisorName: probation.supervisorName || "Không rõ",
+          kpiScore: probation.evaluation?.kpiScore ?? 0,
+          managerComment: probation.evaluation?.comment ?? "Không có nhận xét chi tiết",
+          email: probation.email,
+          phone: probation.phone,
+        }))
+      );
+    } catch (err) {
+      console.error("[Approvals] Load error:", err);
+      setError("Không thể tải dữ liệu phê duyệt. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApprovals();
   }, []);
 
   const handleApproveOffer = async (id: number) => {
     try {
       setProcessing(id);
       await offerService.approveOffer(String(id));
-      setOfferData((prev) => prev.filter((item) => item.id !== id));
-    } catch (e) {
-      alert("Lỗi khi duyệt Offer");
+      toast.success("Đã duyệt Offer!");
+      fetchApprovals();
+    } catch (err) {
+      toast.error("Lỗi khi duyệt Offer");
     } finally {
       setProcessing(null);
     }
@@ -143,9 +147,10 @@ export default function Approvals() {
     try {
       setProcessing(id);
       await offerService.rejectOffer(String(id));
-      setOfferData((prev) => prev.filter((item) => item.id !== id));
-    } catch (e) {
-      alert("Lỗi khi từ chối Offer");
+      toast.success("Đã từ chối Offer!");
+      fetchApprovals();
+    } catch (err) {
+      toast.error("Lỗi khi từ chối Offer");
     } finally {
       setProcessing(null);
     }
@@ -155,9 +160,10 @@ export default function Approvals() {
     try {
       setProcessing(id);
       await probationService.reviewEvaluation(String(id), { decision: "approved" });
-      setProbationData((prev) => prev.filter((item) => item.id !== id));
-    } catch (e) {
-      alert("Lỗi khi duyệt Thử việc");
+      toast.success("Đã duyệt Thử việc!");
+      fetchApprovals();
+    } catch (err) {
+      toast.error("Lỗi khi duyệt Thử việc");
     } finally {
       setProcessing(null);
     }
@@ -167,9 +173,10 @@ export default function Approvals() {
     try {
       setProcessing(id);
       await probationService.reviewEvaluation(String(id), { decision: "rejected" });
-      setProbationData((prev) => prev.filter((item) => item.id !== id));
-    } catch (e) {
-      alert("Lỗi khi từ chối Thử việc");
+      toast.success("Đã từ chối Thử việc!");
+      fetchApprovals();
+    } catch (err) {
+      toast.error("Lỗi khi từ chối Thử việc");
     } finally {
       setProcessing(null);
     }

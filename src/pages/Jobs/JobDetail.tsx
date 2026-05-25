@@ -5,6 +5,7 @@ import NotFound from "../NotFound";
 import Button from "@/components/ui/Button";
 import { applicationService, jobService } from "@/services";
 import type { Job, SubmitApplicationPayload } from "@/types";
+import toast from "react-hot-toast";
 
 const JobDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +14,8 @@ const JobDetail: React.FC = () => {
   const [error, setError] = useState("");
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyResult, setApplyResult] = useState<"success" | "error" | null>(null);
+  const [applyErrorMsg, setApplyErrorMsg] = useState("");
   const [applyForm, setApplyForm] = useState<Omit<SubmitApplicationPayload, "jobId" | "cvUrl">>({
     fullName: "",
     email: "",
@@ -42,16 +44,29 @@ const JobDetail: React.FC = () => {
         ...applyForm,
         cvUrl: cvFile,
       });
-      setApplySuccess(true);
+      setApplyResult("success");
       setTimeout(() => {
         setShowApplyModal(false);
-        setApplySuccess(false);
+        setApplyResult(null);
         setApplyForm({ fullName: "", email: "", phone: "" });
         setCvFile(null);
       }, 2000);
     } catch (err: any) {
       const message = err.response?.data?.message || "Có lỗi xảy ra khi nộp đơn. Vui lòng thử lại.";
-      alert(message);
+
+      if (err.response?.status === 409 || message.includes("already applied")) {
+        setApplyErrorMsg("Email này đã được sử dụng để ứng tuyển cho vị trí này!");
+        setApplyResult("error");
+        setTimeout(() => {
+          setShowApplyModal(false);
+          setApplyResult(null);
+          setApplyErrorMsg("");
+          setApplyForm({ fullName: "", email: "", phone: "" });
+          setCvFile(null);
+        }, 3000);
+      } else {
+        toast.error(message);
+      }
     } finally {
       setIsApplying(false);
     }
@@ -162,7 +177,7 @@ const JobDetail: React.FC = () => {
       {showApplyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in transition-all">
           <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            {applySuccess ? (
+            {applyResult === "success" ? (
               <div className="p-12 text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center">
                   <CheckCircle2 size={32} />
@@ -170,18 +185,26 @@ const JobDetail: React.FC = () => {
                 <h2 className="text-2xl font-bold text-slate-900">Nộp đơn thành công!</h2>
                 <p className="text-slate-500">Cảm ơn bạn đã quan tâm. Nhà tuyển dụng sẽ sớm liên hệ với bạn.</p>
               </div>
+            ) : applyResult === "error" ? (
+              <div className="p-12 text-center space-y-4">
+                <div className="mx-auto w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+                  <X size={32} />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900">Nộp đơn thất bại!</h2>
+                <p className="text-slate-500">{applyErrorMsg}</p>
+              </div>
             ) : (
               <>
                 <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
                   <h2 className="text-xl font-bold text-slate-900">Ứng tuyển vị trí này</h2>
-                  <button 
+                  <button
                     onClick={() => setShowApplyModal(false)}
                     className="p-2 rounded-full hover:bg-slate-100 transition-colors"
                   >
                     <X size={20} className="text-slate-500" />
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleApply} className="p-8 space-y-5">
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700">Họ và tên</label>
@@ -193,7 +216,7 @@ const JobDetail: React.FC = () => {
                       onChange={e => setApplyForm(prev => ({ ...prev, fullName: e.target.value }))}
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-sm font-semibold text-slate-700">Email</label>
@@ -237,8 +260,8 @@ const JobDetail: React.FC = () => {
                   </div>
 
                   <div className="pt-4">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full justify-center py-3"
                       disabled={isApplying}
                     >

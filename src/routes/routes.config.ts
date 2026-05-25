@@ -41,6 +41,7 @@ export const ROUTES = {
   admin: {
     dashboard: "/admin/dashboard",
     users: "/admin/users",
+    config: "/admin/config",
   },
 } as const;
 
@@ -64,6 +65,7 @@ export const DASHBOARD_NAV_ITEMS: Record<UserRole, DashboardNavItem[]> = {
   admin: [
     { to: ROUTES.admin.dashboard, label: "Dashboard", icon: LayoutDashboard },
     { to: ROUTES.admin.users, label: "Quản lý người dùng", icon: UserCog },
+    { to: ROUTES.admin.config, label: "Cấu hình hệ thống", icon: Settings },
   ],
   recruiter: [
     { to: ROUTES.recruiter.dashboard, label: "Dashboard", icon: LayoutDashboard },
