@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useManager } from "@/context/ManagerContext.tsx";
 import { Link } from "react-router-dom";
 import { probationService } from "@/services/probation.service";
+import toast from "react-hot-toast";
 
 const ReviewDialog = ({ row, onReviewed }: { row: any; onReviewed: () => void }) => {
   const [comment, setComment] = useState("");
@@ -35,9 +36,10 @@ const ReviewDialog = ({ row, onReviewed }: { row: any; onReviewed: () => void })
       });
       setOpen(false);
       onReviewed();
+      toast.success("Đã gửi đánh giá thành công!");
     } catch (error) {
       console.error("Lỗi khi gửi đánh giá:", error);
-      alert("Đã xảy ra lỗi khi gửi đánh giá.");
+      toast.error("Đã xảy ra lỗi khi gửi đánh giá.");
     } finally {
       setLoading(false);
     }

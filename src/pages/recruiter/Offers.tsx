@@ -292,11 +292,8 @@ export default function RecruiterOffers() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Quản lý Offer
+              Quản Lý Offer
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Tạo và theo dõi các đề xuất offer cho ứng viên đã Pass phỏng vấn
-            </p>
           </div>
           <button
             onClick={() => setShowForm((v) => !v)}
@@ -348,7 +345,7 @@ export default function RecruiterOffers() {
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
                   <h3 className="mt-2 text-3xl font-bold text-card-foreground">
-                    {String(stat.value).padStart(2, "0")}
+                    {String(stat.value).padStart(1, "0")}
                   </h3>
                 </div>
                 <div className={`rounded-xl p-3 ${stat.bg} ${stat.color}`}>
@@ -478,7 +475,7 @@ export default function RecruiterOffers() {
                 <p className="text-xs text-muted-foreground mt-0.5">Ứng viên: {viewingReason.candidateName}</p>
               </div>
             </div>
-            
+
             <div className="rounded-xl bg-muted/50 p-4 border border-border mb-6 text-left">
               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                 {viewingReason.reason}

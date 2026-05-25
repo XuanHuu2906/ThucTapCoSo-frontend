@@ -41,26 +41,39 @@ const parseRequirements = (requirements?: string | null) =>
       .filter(Boolean)
     : [];
 
-const mapJob = (job: BackendJob): Job => ({
-  id: String(job.jobId),
-  title: job.title,
-  department: job.deptName,
-  location: job.location,
-  type: job.type as JobType,
-  experienceLevel: job.experienceLevel as ExperienceLevel,
-  description: job.description ?? "",
-  requirements: parseRequirements(job.requirements),
-  salaryMin: undefined,
-  salaryMax: undefined,
-  currency: "VND",
-  headcount: job.headcount,
-  deadline: job.endDate,
-  status: statusMap[job.status] ?? "draft",
-  applicants: 0,
-  createdBy: String(job.postedBy),
-  createdAt: job.createdAt,
-  updatedAt: job.createdAt,
-});
+const mapJob = (job: BackendJob): Job => {
+  let salaryMin: number | undefined;
+  let salaryMax: number | undefined;
+
+  if (job.salaryRange) {
+    const parts = job.salaryRange.split("-").map((p) => Number(p.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      salaryMin = parts[0];
+      salaryMax = parts[1];
+    }
+  }
+
+  return {
+    id: String(job.jobId),
+    title: job.title,
+    department: job.deptName,
+    location: job.location,
+    type: job.type as JobType,
+    experienceLevel: job.experienceLevel as ExperienceLevel,
+    description: job.description ?? "",
+    requirements: parseRequirements(job.requirements),
+    salaryMin,
+    salaryMax,
+    currency: "VND",
+    headcount: job.headcount,
+    deadline: job.endDate,
+    status: statusMap[job.status] ?? "draft",
+    applicants: 0,
+    createdBy: String(job.postedBy),
+    createdAt: job.createdAt,
+    updatedAt: job.createdAt,
+  };
+};
 
 const toBackendPayload = (payload: Partial<JobPayload>) => ({
   title: payload.title,

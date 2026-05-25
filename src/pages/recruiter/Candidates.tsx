@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
     Search, Mail, Phone, Calendar, FileText,
@@ -40,38 +40,58 @@ export default function Candidates() {
     const [modalMode, setModalMode] = useState<"none" | "cv" | "interview" | "offer">("none");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [hiringManagers, setHiringManagers] = useState<{ id: string; name: string; department?: string }[]>([]);
     const [interviewForm, setInterviewForm] = useState({
         id: "", // Lưu interviewId nếu là sửa
         date: "",
         time: "",
         location: "",
-        interviewerId: "2",
+        interviewerId: "",
         round: "technical" as InterviewRound,
     });
 
-    useEffect(() => {
-        applicationService
-            .getApplications()
-            .then((applications: Application[]) =>
-                setCandidates(
-                    applications.map((application) => ({
-                        id: application.candidateId,
-                        applicationId: application.id,
-                        name: application.candidateName,
-                        title: application.jobTitle,
-                        email: application.candidateEmail,
-                        phone: application.candidatePhone,
-                        appliedAt: formatDate(application.appliedAt),
-                        status: CANDIDATE_STATUS_LABELS[application.status],
-                        rawStatus: application.status,
-                        cvUrl: application.cvUrl,
-                        jobId: application.jobId,
-                    }))
-                )
-            )
-            .catch(() => setError("Không thể tải danh sách ứng viên."))
-            .finally(() => setIsLoading(false));
+    const fetchCandidates = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const applications = await applicationService.getApplications();
+            setCandidates(
+                applications.map((application) => ({
+                    id: application.candidateId,
+                    applicationId: application.id,
+                    name: application.candidateName,
+                    title: application.jobTitle,
+                    email: application.candidateEmail,
+                    phone: application.candidatePhone,
+                    appliedAt: formatDate(application.appliedAt),
+                    status: CANDIDATE_STATUS_LABELS[application.status],
+                    rawStatus: application.status,
+                    cvUrl: application.cvUrl,
+                    jobId: application.jobId,
+                }))
+            );
+        } catch (e) {
+            setError("Không thể tải danh sách ứng viên.");
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        const fetchHiringManagers = async () => {
+            try {
+                const users = await userService.getHiringManagers();
+                setHiringManagers(users.map(u => ({ id: String(u.id), name: u.fullName, department: u.department })));
+                // Set default interviewer if available
+                if (users.length > 0) {
+                    setInterviewForm(prev => ({ ...prev, interviewerId: String(users[0].id) }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch hiring managers", err);
+            }
+        };
+        fetchHiringManagers();
+        fetchCandidates();
+    }, [fetchCandidates]);
 
     const positions = useMemo(
         () => ["Tất cả vị trí", ...Array.from(new Set(candidates.map((candidate) => candidate.title)))],
@@ -85,13 +105,11 @@ export default function Candidates() {
         // Nếu là phỏng vấn và đã có lịch thì lấy dữ liệu cũ
         if (mode === "interview" && candidate.rawStatus === "interviewing") {
             try {
-                // Lấy danh sách phỏng vấn của ứng viên này (thường chỉ có 1 cuộc phỏng vấn active)
                 const interviews = await interviewService.getInterviews({ candidateId: candidate.applicationId });
                 if (interviews.length > 0) {
                     const latest = interviews[0];
                     const dateObj = new Date(latest.scheduledAt);
-                    
-                    // Lấy các thành phần ngày giờ địa phương
+
                     const year = dateObj.getFullYear();
                     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
                     const day = String(dateObj.getDate()).padStart(2, '0');
@@ -103,7 +121,7 @@ export default function Candidates() {
                         date: `${year}-${month}-${day}`,
                         time: `${hours}:${minutes}`,
                         location: latest.location || "",
-                        interviewerId: latest.interviewerIds[0] || "2",
+                        interviewerId: latest.interviewerIds[0] || hiringManagers[0]?.id || "",
                         round: latest.round,
                     });
                 }
@@ -117,13 +135,12 @@ export default function Candidates() {
         setModalMode("none");
         setSelectedCandidate(null);
         setShowSuccess(false);
-        // Reset form dữ liệu phỏng vấn
         setInterviewForm({
             id: "",
             date: "",
             time: "",
             location: "",
-            interviewerId: "2",
+            interviewerId: hiringManagers[0]?.id || "",
             round: "technical",
         });
     };
@@ -179,14 +196,14 @@ export default function Candidates() {
     const handleUpdateStatus = async (appId: string, newStatus: ApplicationStatus) => {
         try {
             const updatedApp = await applicationService.updateStatus(appId, { status: newStatus });
-            
+
             // Cập nhật lại state candidates để giao diện thay đổi ngay lập tức
-            setCandidates(prev => prev.map(c => 
-                c.applicationId === appId 
-                ? { ...c, status: CANDIDATE_STATUS_LABELS[updatedApp.status], rawStatus: updatedApp.status }
-                : c
+            setCandidates(prev => prev.map(c =>
+                c.applicationId === appId
+                    ? { ...c, status: CANDIDATE_STATUS_LABELS[updatedApp.status], rawStatus: updatedApp.status }
+                    : c
             ));
-            
+
             // Nếu đang mở modal thì đóng lại
             if (selectedCandidate?.applicationId === appId) {
                 closeModal();
@@ -200,13 +217,13 @@ export default function Candidates() {
 
     const handleScheduleInterview = async () => {
         if (!selectedCandidate) return;
-        
+
         setIsSubmitting(true);
         try {
             // Tạo đối tượng Date từ input (mặc định là giờ địa phương)
             const localDate = new Date(`${interviewForm.date}T${interviewForm.time}`);
             const scheduledAt = localDate.toISOString();
-            
+
             if (interviewForm.id) {
                 // Cập nhật lịch cũ
                 await interviewService.updateInterview(interviewForm.id, {
@@ -231,10 +248,10 @@ export default function Candidates() {
 
             // Cập nhật trạng thái ứng viên trong danh sách
             if (!interviewForm.id) {
-                setCandidates(prev => prev.map(c => 
-                    c.applicationId === selectedCandidate.applicationId 
-                    ? { ...c, status: CANDIDATE_STATUS_LABELS["interviewing"], rawStatus: "interviewing" }
-                    : c
+                setCandidates(prev => prev.map(c =>
+                    c.applicationId === selectedCandidate.applicationId
+                        ? { ...c, status: CANDIDATE_STATUS_LABELS["interviewing"], rawStatus: "interviewing" }
+                        : c
                 ));
             }
 
@@ -258,9 +275,6 @@ export default function Candidates() {
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                         Hồ sơ ứng viên
                     </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        Sàng lọc và quản lý quy trình tuyển dụng (UC-04, 05, 08)
-                    </p>
                 </div>
 
                 <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
@@ -376,22 +390,22 @@ export default function Candidates() {
                             </div>
 
                             <div className="mt-6 flex flex-wrap gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                                <button 
+                                <button
                                     onClick={() => openModal(candidate, "cv")}
                                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-all active:scale-95"
                                 >
                                     <FileText size={14} /> CV
                                 </button>
-                                
+
                                 {candidate.rawStatus === "new" && (
                                     <>
-                                        <button 
+                                        <button
                                             onClick={() => handleUpdateStatus(candidate.applicationId, "shortlisted")}
                                             className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition-all active:scale-95"
                                         >
                                             Duyệt
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => handleUpdateStatus(candidate.applicationId, "rejected")}
                                             className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-2 text-xs font-bold dark:bg-rose-500/10 transition-all active:scale-95"
                                         >
@@ -405,7 +419,7 @@ export default function Candidates() {
                                         onClick={() => openModal(candidate, "interview")}
                                         className="flex-[2] inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition-all active:scale-95"
                                     >
-                                        <Calendar size={14} /> Đặt lịch PV
+                                        <Calendar size={14} /> {candidate.status === 'Hẹn PV' ? 'Đổi lịch PV' : 'Đặt lịch PV'}
                                     </button>
                                 )}
 
@@ -461,7 +475,7 @@ export default function Candidates() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button 
+                                                <button
                                                     onClick={() => openModal(candidate, "cv")}
                                                     className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-500/10 transition-all active:scale-95"
                                                 >
@@ -469,14 +483,14 @@ export default function Candidates() {
                                                 </button>
                                                 {candidate.rawStatus === "new" && (
                                                     <>
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleUpdateStatus(candidate.applicationId, "shortlisted")}
                                                             className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all"
                                                             title="Duyệt hồ sơ"
                                                         >
                                                             <CheckCircle2 size={18} />
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleUpdateStatus(candidate.applicationId, "rejected")}
                                                             className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
                                                             title="Loại hồ sơ"
@@ -499,7 +513,7 @@ export default function Candidates() {
             {modalMode !== "none" && selectedCandidate && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in transition-all">
                     <div className="w-full max-w-xl rounded-3xl bg-white shadow-2xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-800 animate-in zoom-in-95 duration-200 overflow-hidden">
-                        
+
                         {showSuccess ? (
                             <div className="p-12 text-center space-y-4">
                                 <div className="mx-auto w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center">
@@ -524,165 +538,175 @@ export default function Candidates() {
 
                                 {/* Body Selection */}
                                 <div className="p-6">
-                            {modalMode === "cv" && (
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-1">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</p>
-                                            <p className="text-sm font-semibold truncate">{selectedCandidate.email}</p>
-                                        </div>
-                                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-1">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone</p>
-                                            <p className="text-sm font-semibold">{selectedCandidate.phone}</p>
-                                        </div>
-                                    </div>
+                                    {modalMode === "cv" && (
+                                        <div className="space-y-6">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-1">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</p>
+                                                    <p className="text-sm font-semibold truncate">{selectedCandidate.email}</p>
+                                                </div>
+                                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-1">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone</p>
+                                                    <p className="text-sm font-semibold">{selectedCandidate.phone}</p>
+                                                </div>
+                                            </div>
 
-                                    {selectedCandidate.cvUrl && (
-                                        <div className="flex gap-3 px-1">
-                                            <a
-                                                href={selectedCandidate.cvUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
-                                            >
-                                                🔍 Xem CV toàn màn hình
-                                            </a>
-                                            <button
-                                                onClick={() => handleDownload(selectedCandidate.cvUrl, selectedCandidate.name)}
-                                                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 transition-all shadow-sm"
-                                            >
-                                                ⬇️ Tải xuống
-                                            </button>
+                                            {selectedCandidate.cvUrl && (
+                                                <div className="flex gap-3 px-1">
+                                                    <a
+                                                        href={selectedCandidate.cvUrl}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
+                                                    >
+                                                        🔍 Xem CV toàn màn hình
+                                                    </a>
+                                                    <button
+                                                        onClick={() => handleDownload(selectedCandidate.cvUrl, selectedCandidate.name)}
+                                                        className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 transition-all shadow-sm"
+                                                    >
+                                                        ⬇️ Tải xuống
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 h-[500px] relative group">
+                                                {selectedCandidate.cvUrl ? (
+                                                    <iframe
+                                                        src={selectedCandidate.cvUrl}
+                                                        className="w-full h-full border-none"
+                                                        title={`CV - ${selectedCandidate.name}`}
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-full gap-3">
+                                                        <FileText size={40} className="text-slate-300" />
+                                                        <p className="text-sm font-bold text-slate-400">Ứng viên chưa tải lên CV</p>
+                                                    </div>
+                                                )}
+                                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <a
+                                                        href={selectedCandidate.cvUrl}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="bg-white/90 backdrop-blur shadow-sm p-2 rounded-lg text-slate-700 hover:text-blue-600 transition-colors block"
+                                                        title="Mở trong tab mới"
+                                                    >
+                                                        <FileText size={18} />
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
-                                    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 h-[500px] relative group">
-                                        {selectedCandidate.cvUrl ? (
-                                            <iframe
-                                                src={selectedCandidate.cvUrl}
-                                                className="w-full h-full border-none"
-                                                title={`CV - ${selectedCandidate.name}`}
-                                            />
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center h-full gap-3">
-                                                <FileText size={40} className="text-slate-300" />
-                                                <p className="text-sm font-bold text-slate-400">Ứng viên chưa tải lên CV</p>
-                                            </div>
-                                        )}
-                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <a
-                                                href={selectedCandidate.cvUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="bg-white/90 backdrop-blur shadow-sm p-2 rounded-lg text-slate-700 hover:text-blue-600 transition-colors block"
-                                                title="Mở trong tab mới"
-                                            >
-                                                <FileText size={18} />
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {modalMode === "interview" && (
-                                <div className="space-y-5">
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Thời gian phỏng vấn</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="relative">
-                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input 
-                                                    type="date" 
-                                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" 
-                                                    value={interviewForm.date}
-                                                    onChange={e => setInterviewForm(prev => ({ ...prev, date: e.target.value }))}
-                                                />
+                                    {modalMode === "interview" && (
+                                        <div className="space-y-5">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Thời gian phỏng vấn</label>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="relative">
+                                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                        <input
+                                                            type="date"
+                                                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
+                                                            value={interviewForm.date}
+                                                            onChange={e => setInterviewForm(prev => ({ ...prev, date: e.target.value }))}
+                                                        />
+                                                    </div>
+                                                    <div className="relative">
+                                                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                        <input
+                                                            type="time"
+                                                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
+                                                            value={interviewForm.time}
+                                                            onChange={e => setInterviewForm(prev => ({ ...prev, time: e.target.value }))}
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="relative">
-                                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input 
-                                                    type="time" 
-                                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" 
-                                                    value={interviewForm.time}
-                                                    onChange={e => setInterviewForm(prev => ({ ...prev, time: e.target.value }))}
-                                                />
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Địa điểm / Link họp</label>
+                                                <div className="relative">
+                                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="VD: Phòng 302 hoặc Link Google Meet"
+                                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
+                                                        value={interviewForm.location}
+                                                        onChange={e => setInterviewForm(prev => ({ ...prev, location: e.target.value }))}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Người phỏng vấn (Manager)</label>
+                                                <div className="relative">
+                                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                    <select
+                                                        className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
+                                                        value={interviewForm.interviewerId}
+                                                        onChange={e => setInterviewForm(prev => ({ ...prev, interviewerId: e.target.value }))}
+                                                    >
+                                                        {hiringManagers.length > 0 ? (
+                                                            hiringManagers.map(hm => (
+                                                                <option key={hm.userId} value={hm.userId}>
+                                                                    {hm.fullName} {hm.department ? `(HM - ${hm.department})` : ''}
+                                                                </option>
+                                                            ))
+                                                        ) : (
+                                                            <>
+                                                                <option value="2">Trần Thị B (HM - Engineering)</option>
+                                                                <option value="3">Nguyễn Văn X (Lead - UI/UX)</option>
+                                                            </>
+                                                        )}
+                                                    </select>
+                                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                                                </div>
+                                                <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center gap-1 italic"><Clock size={10} /> Hệ thống đã kiểm tra: Manager không trùng lịch vào giờ này.</p>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Địa điểm / Link họp</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                            <input 
-                                                type="text" 
-                                                placeholder="VD: Phòng 302 hoặc Link Google Meet" 
-                                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" 
-                                                value={interviewForm.location}
-                                                onChange={e => setInterviewForm(prev => ({ ...prev, location: e.target.value }))}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Người phỏng vấn (Manager)</label>
-                                        <div className="relative">
-                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                            <select 
-                                                className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none"
-                                                value={interviewForm.interviewerId}
-                                                onChange={e => setInterviewForm(prev => ({ ...prev, interviewerId: e.target.value }))}
-                                            >
-                                                <option value="2">Trần Thị B (HM - Engineering)</option>
-                                                <option value="3">Nguyễn Văn X (Lead - UI/UX)</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                                        </div>
-                                        <p className="text-[10px] text-amber-600 font-bold mt-1 flex items-center gap-1 italic"><Clock size={10} /> Hệ thống đã kiểm tra: Manager không trùng lịch vào giờ này.</p>
-                                    </div>
-                                </div>
-                            )}
+                                    )}
 
-                            {modalMode === "offer" && (
-                                <div className="space-y-5">
-                                    <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl flex items-center gap-3 border border-emerald-100 dark:border-emerald-500/20 mb-4">
-                                        <CheckCircle2 className="text-emerald-600 shrink-0" size={24} />
-                                        <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 leading-snug">Ứng viên đã đạt yêu cầu chuyên môn. Nhập các thông tin đãi ngộ để gửi Director phê duyệt (UC-08).</p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Lương cơ bản (Gross)</label>
-                                            <div className="relative">
-                                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input type="number" placeholder="VD: 25,000,000" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
+                                    {modalMode === "offer" && (
+                                        <div className="space-y-5">
+                                            <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl flex items-center gap-3 border border-emerald-100 dark:border-emerald-500/20 mb-4">
+                                                <CheckCircle2 className="text-emerald-600 shrink-0" size={24} />
+                                                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 leading-snug">Ứng viên đã đạt yêu cầu chuyên môn. Nhập các thông tin đãi ngộ để gửi Director phê duyệt (UC-08).</p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Lương cơ bản (Gross)</label>
+                                                    <div className="relative">
+                                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                        <input type="number" placeholder="VD: 25,000,000" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pl-10 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Phụ cấp (nếu có)</label>
+                                                    <input type="number" placeholder="VD: 2,000,000" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Ngày bắt đầu dự kiến</label>
+                                                <input type="date" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
                                             </div>
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Phụ cấp (nếu có)</label>
-                                            <input type="number" placeholder="VD: 2,000,000" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Ngày bắt đầu dự kiến</label>
-                                        <input type="date" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none" />
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
 
-                        {/* Footer */}
-                        <div className="bg-slate-50 dark:bg-slate-800 px-6 py-4 flex items-center justify-end gap-3">
-                            <button onClick={closeModal} className="px-5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-white dark:hover:bg-slate-700 transition-all">Đóng</button>
-                            {modalMode === "interview" && (
-                                <button 
-                                    onClick={handleScheduleInterview} 
-                                    disabled={isSubmitting || !interviewForm.date || !interviewForm.time}
-                                    className="px-6 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-50"
-                                >
-                                    {isSubmitting ? "Đang xử lý..." : "Xác nhận lịch"}
-                                </button>
-                            )}
-                            {modalMode === "offer" && (
-                                <button onClick={closeModal} className="px-6 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-500 transition-all active:scale-95">Gửi đề xuất Offer</button>
-                            )}
-                        </div>
+                                {/* Footer */}
+                                <div className="bg-slate-50 dark:bg-slate-800 px-6 py-4 flex items-center justify-end gap-3">
+                                    <button onClick={closeModal} className="px-5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-white dark:hover:bg-slate-700 transition-all">Đóng</button>
+                                    {modalMode === "interview" && (
+                                        <button
+                                            onClick={handleScheduleInterview}
+                                            disabled={isSubmitting || !interviewForm.date || !interviewForm.time}
+                                            className="px-6 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-all active:scale-95 disabled:opacity-50"
+                                        >
+                                            {isSubmitting ? "Đang xử lý..." : "Xác nhận lịch"}
+                                        </button>
+                                    )}
+                                    {modalMode === "offer" && (
+                                        <button onClick={closeModal} className="px-6 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-500 transition-all active:scale-95">Gửi đề xuất Offer</button>
+                                    )}
+                                </div>
                             </>
                         )}
                     </div>

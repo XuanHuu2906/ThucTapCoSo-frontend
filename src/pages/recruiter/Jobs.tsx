@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { Job, JobType, ExperienceLevel, JobPayload } from "../../types/job";
-import { applicationService, jobService } from "@/services";
+import { applicationService, jobService, userService } from "@/services";
 import { formatDate } from "@/utils/date";
 
 const JOB_TYPE_LABELS: Record<JobType, string> = {
@@ -34,6 +34,7 @@ const RecruiterJobs: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [departments, setDepartments] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<Omit<JobPayload, "saveAsDraft">>({
     title: "",
@@ -70,9 +71,10 @@ const RecruiterJobs: React.FC = () => {
     setError("");
 
     try {
-      const [jobList, applications] = await Promise.all([
+      const [jobList, applications, deptList] = await Promise.all([
         jobService.getJobs(),
         applicationService.getApplications(),
+        userService.getDepartments()
       ]);
       const applicantCount = applications.reduce<Record<string, number>>((acc, application) => {
         acc[application.jobId] = (acc[application.jobId] ?? 0) + 1;
@@ -85,6 +87,7 @@ const RecruiterJobs: React.FC = () => {
           applicants: applicantCount[job.id] ?? 0,
         }))
       );
+      setDepartments(deptList);
     } catch {
       setError("Không thể tải danh sách tin tuyển dụng.");
     } finally {
@@ -175,11 +178,8 @@ const RecruiterJobs: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Quản lý tin tuyển dụng
+            Quản Lý Tin Tuyển Dụng
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Quản lý vòng đời bài đăng tuyển dụng (UC-02)
-          </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -307,7 +307,7 @@ const RecruiterJobs: React.FC = () => {
                           <Edit size={16} />
                         </button>
                       )}
-                      
+
                       {job.status === 'published' && (
                         <button
                           onClick={() => handleCloseJob(job.id)}
@@ -380,14 +380,17 @@ const RecruiterJobs: React.FC = () => {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phòng ban</label>
-                    <input
-                      type="text"
+                    <select
                       className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm dark:bg-slate-800/50 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                      placeholder="VD: Engineering"
                       value={formData.department}
                       onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
                       required
-                    />
+                    >
+                      <option value="" disabled>-- Chọn phòng ban --</option>
+                      {departments.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Hình thức làm việc</label>
