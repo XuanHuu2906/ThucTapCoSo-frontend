@@ -25,10 +25,12 @@ type BackendUser = Omit<Partial<User>, "role" | "status"> & {
 };
 
 const roleMap: Record<string, UserRole> = {
+  Admin: "admin",
   Recruiter: "recruiter",
   HiringManager: "manager",
   Director: "director",
   Probationer: "probationer",
+  admin: "admin",
   recruiter: "recruiter",
   manager: "manager",
   director: "director",
@@ -79,6 +81,14 @@ export const authService = {
   async getMe(): Promise<User> {
     const response = await api.get<BackendUser>("/auth/me");
     return normalizeUser(unwrapResponse(response));
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+    await api.post("/auth/forgot-password", { email });
+  },
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    await api.post("/auth/reset-password", { token, password });
   },
 
   logout(): void {

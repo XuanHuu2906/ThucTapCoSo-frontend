@@ -1,0 +1,128 @@
+5.2 API Design
+
+Purpose:
+Specify all interfaces between components and external systems, defining contracts for communication. Well-defined APIs enable independent development, facilitate testing with mocks, and prevent integration issues by establishing clear contracts upfront.
+
+Prerequisite deliverables from previous steps:
+- DOC 1.3-A: System Context Diagram (from step 1.3)
+- DOC 3.3-A: UI Wireframes Document (from step 3.3)
+- DOC 5.1-A: Component Diagram (from step 5.1)
+- DOC 5.1-B: Component Responsibility Matrix (from step 5.1)
+
+Tasks:
+
+Task 5.2.1: Identify Required APIs
+    Use component dependencies (DOC 5.1-A) and UI wireframes (DOC 3.3-A) to determine what APIs are needed for component communication and external integrations.
+    
+    Guiding questions:
+    - Which components need to communicate? (from component diagram dependencies)
+    - What operations do UI screens require? (from wireframes 3.3-A)
+    - What external systems need APIs? (from context diagram 1.3-A)
+    - Which APIs are public (external clients) vs internal (between components)?
+    - What data needs to flow between components?
+    
+    Acceptance criteria:
+    - APIs identified for each component dependency in diagram
+    - UI wireframes mapped to backend API endpoints needed
+    - External integrations from context diagram have API specifications
+    - Public vs internal APIs distinguished
+    - APIs organized by component/service from component diagram
+    
+    Example:
+    "Order Service APIs: POST /orders (Create Order screen from wireframe), GET /orders/{id} (Order Detail screen), GET /orders?customerId={id} (Order List screen), PUT /orders/{id}/status (status updates). External: POST /webhooks/payment (Payment Gateway callback from context diagram)."
+    
+    Red flags to watch for:
+    - Missing APIs needed by UI wireframes
+    - No APIs for component dependencies shown in diagram
+    - External system integrations from context diagram not specified
+
+Task 5.2.2: Design REST API Endpoints
+    Define URL structure, HTTP methods, request/response formats, and status codes for each API following REST conventions.
+    
+    Guiding questions:
+    - What resources are being manipulated? (nouns, not verbs)
+    - What HTTP method fits the operation? (GET/POST/PUT/DELETE)
+    - What request data is needed? (headers, path params, query params, body)
+    - What should the response contain? (data structure, pagination)
+    - What status codes indicate success/failure? (200, 201, 400, 404, 500)
+    - What pagination/filtering is needed? (for list endpoints)
+    
+    Acceptance criteria:
+    - Each endpoint documented: HTTP method, URL pattern, description
+    - Request specification: path parameters, query parameters, headers, body schema
+    - Response specification: status codes, headers, body schema (success and error cases)
+    - Pagination defined for list endpoints (page/limit or cursor-based)
+    - Filtering/sorting parameters specified where needed
+    - Examples provided for each endpoint (request and response)
+    
+    Example:
+    "GET /api/v1/orders?status={status}&page={page}&limit={limit}
+    Response 200: { data: [orders], pagination: { page, limit, total } }
+    Response 400: { error: { code: 'INVALID_STATUS', message: '...' } }
+    
+    POST /api/v1/orders
+    Request: { customerId, items: [{productId, quantity}], shippingAddress }
+    Response 201: { orderId, status, total, createdAt }
+    Response 400: { error: { code: 'VALIDATION_FAILED', details: [...] } }"
+    
+    Red flags to watch for:
+    - Verbs in URLs (/getOrder instead of GET /orders)
+    - Wrong HTTP methods (GET to create, POST to retrieve)
+    - Inconsistent naming (camelCase vs snake_case mixed)
+    - Missing error responses
+    - No pagination for potentially large lists
+
+Task 5.2.3: Define Authentication, Versioning, and Error Standards
+    Specify cross-cutting API concerns including security, versioning strategy, and standardized error format.
+    
+    Guiding questions:
+    - How will APIs authenticate requests? (API keys, OAuth, JWT)
+    - How will APIs be versioned? (URL, header, query param)
+    - What's the standard error response format?
+    - What rate limiting applies?
+    - What headers are required/optional?
+    
+    Acceptance criteria:
+    - Authentication mechanism specified (for public and internal APIs)
+    - Versioning strategy defined (recommended: URL versioning /v1/)
+    - Standard error response format documented with error codes
+    - Rate limiting policy specified if applicable
+    - Common headers documented (Content-Type, Authorization, correlation IDs)
+    - CORS policy defined for public APIs
+    
+    Example:
+    "Authentication: JWT Bearer tokens (Authorization: Bearer {token}). Versioning: URL-based (/api/v1/). Standard error format: { error: { code, message, details[], timestamp, requestId } }. Rate limit: 1000 requests/hour per API key, returns 429 with Retry-After header. Required headers: Content-Type: application/json."
+    
+    Red flags to watch for:
+    - No authentication for sensitive APIs
+    - No versioning strategy (breaking changes will break clients)
+    - Inconsistent error formats across endpoints
+    - No rate limiting on public APIs
+
+Deliverable:
+DOC 5.2-A: API Specification Document
+
+Output format:
+Document in OpenAPI/Swagger format (8-15 pages):
+
+1. **API Overview:** Purpose, base URLs, authentication summary, versioning approach
+
+2. **Authentication & Security:** Mechanism details, token format, required headers, permissions
+
+3. **Endpoint Specifications:** For each endpoint:
+   - HTTP method and URL pattern
+   - Description and use case
+   - Request: path params, query params, headers, body schema (JSON)
+   - Response: status codes, headers, body schema for each status
+   - Example requests and responses
+   - Organized by resource/component
+
+4. **Common Data Models:** Shared schemas used across endpoints (Order, Customer, Error, Pagination)
+
+5. **Error Handling:** Standard error format, common error codes catalog, HTTP status code usage
+
+6. **Versioning & Evolution:** Versioning strategy, backward compatibility rules, deprecation policy
+
+7. **Rate Limiting & Quotas:** Limits, headers, throttling behavior
+
+This document enables frontend and backend teams to develop in parallel and serves as contract for integration testing.

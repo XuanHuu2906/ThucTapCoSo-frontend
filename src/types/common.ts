@@ -16,6 +16,7 @@ export type Theme =
  * Mỗi vai trò sẽ được chuyển hướng đến Dashboard riêng sau khi đăng nhập.
  */
 export type UserRole =
+  | "admin"        // Quản trị hệ thống – quản lý người dùng và có toàn quyền
   | "recruiter"    // Chuyên viên Tuyển dụng – quản lý toàn bộ quy trình tuyển dụng
   | "manager"      // Trưởng bộ phận (Hiring Manager) – phỏng vấn chuyên môn, đánh giá thử việc
   | "director"     // Giám đốc – phê duyệt Offer và kết quả thử việc cuối cùng

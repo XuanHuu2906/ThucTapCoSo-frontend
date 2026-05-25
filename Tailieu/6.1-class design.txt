@@ -1,0 +1,131 @@
+6.1 Class Design
+
+Purpose:
+Design detailed class structure for each component including attributes, methods, and relationships. This translates architectural components into specific object-oriented designs that developers can directly implement, serving as the blueprint for code.
+
+Prerequisite deliverables from previous steps:
+- DOC 2.3-A: Conceptual ERD (from step 2.3)
+- DOC 5.1-A: Component Diagram (from step 5.1)
+- DOC 5.2-A: API Specification Document (from step 5.2)
+- DOC 5.3-A: Physical ERD (from step 5.3)
+
+Tasks:
+
+Task 6.1.1: Identify Classes from Domain Model and Components
+    Use the conceptual ERD (DOC 2.3-A), physical ERD (DOC 5.3-A), and component diagram (DOC 5.1-A) to identify all classes needed for implementation.
+    
+    Guiding questions:
+    - What entities from the ERD become domain classes?
+    - What additional classes are needed per component? (controllers, services, repositories)
+    - What value objects are needed? (Money, Address, DateRange)
+    - What DTOs are needed for API requests/responses? (from API spec 5.2-A)
+    - What utility/helper classes are needed?
+    
+    Acceptance criteria:
+    - Domain/entity classes identified from ERD (2.3-A and 5.3-A)
+    - Controller classes identified for each API endpoint group (from 5.2-A)
+    - Service classes identified for business logic (from components 5.1-A)
+    - Repository/DAO classes for data access (one per entity)
+    - DTO classes for API contracts (from API spec 5.2-A)
+    - Value object classes for domain concepts
+    - Classes organized by component from component diagram
+    
+    Example:
+    "Order component classes: OrderController (handles API endpoints from 5.2-A), OrderService (business logic), OrderRepository (data access for orders table from 5.3-A), Order (entity from ERD 2.3-A), OrderItem (entity), OrderDTO (API request/response from 5.2-A), OrderStatus (enum), Money (value object for amounts)."
+    
+    Red flags to watch for:
+    - Missing repository classes for entities
+    - No DTOs (exposing entities directly in APIs)
+    - God classes (one class does everything)
+    - Entities not matching ERD tables
+
+Task 6.1.2: Design Class Attributes and Methods
+    Define attributes, methods, visibility, and signatures for each class using the physical ERD (DOC 5.3-A) for entity attributes and API spec (DOC 5.2-A) for controller methods.
+    
+    Guiding questions:
+    - What data does each class hold? (from ERD for entities)
+    - What operations does each class perform?
+    - What visibility for each member? (private, protected, public)
+    - What are method signatures? (parameters, return types from API spec)
+    - Are classes mutable or immutable? (value objects should be immutable)
+    - What validation logic belongs in each class?
+    
+    Acceptance criteria:
+    - Attributes defined with: name, type, visibility, default value
+    - Entity attributes match physical ERD columns (DOC 5.3-A)
+    - Methods defined with: name, parameters, return type, visibility
+    - Controller methods match API endpoints (DOC 5.2-A)
+    - Constructors defined (with parameter validation)
+    - Getters/setters defined following conventions
+    - Business methods identified and documented
+    - Validation methods included where needed
+    
+    Example:
+    "Order class: Attributes: -orderId: Long, -customerId: Long, -items: List<OrderItem>, -totalAmount: Money, -status: OrderStatus, -createdAt: LocalDateTime (from ERD 5.3-A). Methods: +addItem(product, quantity): void, +calculateTotal(): Money, +canCancel(): boolean, +cancel(): void, +getOrderId(): Long. OrderController: +createOrder(orderDTO: OrderDTO): ResponseEntity<OrderDTO> (from POST /orders in 5.2-A), +getOrder(orderId: Long): ResponseEntity<OrderDTO> (from GET /orders/{id})."
+    
+    Red flags to watch for:
+    - Public attributes (should be private with getters/setters)
+    - Missing validation in constructors
+    - Mismatch between entity attributes and database columns
+    - Controller methods don't match API spec
+
+Task 6.1.3: Define Relationships and Apply Design Patterns
+    Specify relationships between classes (inheritance, composition, association) and apply appropriate design patterns to solve common problems.
+    
+    Guiding questions:
+    - What inheritance hierarchies make sense? (is-a relationships)
+    - What composition relationships exist? (has-a, strong ownership)
+    - What associations are needed? (uses, knows about)
+    - What design patterns fit? (Strategy, Factory, Repository, Observer, etc.)
+    - How are objects created? (constructors, factories, builders)
+    - How are dependencies injected?
+    
+    Acceptance criteria:
+    - Relationships defined: inheritance (generalization), composition, aggregation, association, dependency
+    - Multiplicity specified (1, 0..1, 0..*, 1..*)
+    - At least 3-5 design patterns applied and documented
+    - Factory or Builder pattern for complex object creation
+    - Repository pattern for data access
+    - Strategy pattern for variable algorithms
+    - Dependency injection points identified
+    - SOLID principles verified (especially Single Responsibility, Dependency Inversion)
+    
+    Example:
+    "Relationships: Order contains (composition) OrderItem [1..*]. OrderService depends on (dependency) OrderRepository, PaymentService. Patterns: Repository pattern for OrderRepository, CustomerRepository. Factory pattern: OrderFactory.createFromDTO(orderDTO). Strategy pattern: PaymentStrategy interface with CreditCardPayment, PayPalPayment implementations. Builder pattern: OrderDTO.builder().customerId(1).items(list).build(). Dependency Injection: OrderService constructor receives OrderRepository, PaymentService via DI."
+    
+    Red flags to watch for:
+    - Inappropriate inheritance (prefer composition)
+    - Circular dependencies between classes
+    - No design patterns (reinventing solutions)
+    - Violating SOLID principles (classes with multiple responsibilities)
+
+Deliverable:
+DOC 6.1-A: Detailed Class Diagrams
+
+Output format:
+Document containing (10-20 pages):
+
+1. **Class Diagram Overview:** High-level package/namespace structure showing how classes are organized
+
+2. **Detailed Class Diagrams by Component:** For each component from DOC 5.1-A (3-5 diagrams):
+   - All classes with stereotypes (<<entity>>, <<controller>>, <<service>>, <<repository>>)
+   - Attributes with: visibility (+/-/#), name, type
+   - Methods with: visibility, name(parameters): returnType
+   - Relationships with arrows: inheritance (hollow triangle), composition (filled diamond), association (line), dependency (dashed arrow)
+   - Multiplicity on associations
+
+3. **Class Specifications:** For each class (table format):
+   - Class name, stereotype, purpose
+   - Attributes: name, type, visibility, default, description
+   - Methods: signature, purpose, preconditions, postconditions
+   - Relationships: related classes and relationship type
+
+4. **Design Patterns Applied:** 
+   - Pattern name, problem solved, classes involved, diagram showing pattern structure
+   - 3-5 patterns documented (Repository, Factory, Strategy, Builder, etc.)
+
+5. **Entity-Table Mapping:** Matrix showing which entity classes map to which database tables (from DOC 5.3-A)
+
+6. **DTO-API Mapping:** Which DTO classes correspond to which API requests/responses (from DOC 5.2-A)
+
+7. **Dependency Injection Configuration:** What dependencies each class receives, how they're injected (constructor, setter)

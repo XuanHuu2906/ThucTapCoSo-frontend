@@ -1,0 +1,115 @@
+7.4 Development Standards
+
+Purpose:
+Establish coding conventions, naming standards, and code quality rules for consistent, maintainable code across the team. Well-defined standards reduce code review friction, improve readability, and prevent technical debt from inconsistent practices.
+
+Prerequisite deliverables from previous steps:
+- DOC 4.2-A: Technology Stack Decision Document (from step 4.2)
+- DOC 6.1-A: Detailed Class Diagrams (from step 6.1)
+
+Tasks:
+
+Task 7.4.1: Define Naming Conventions and Code Organization
+    Use technology stack (DOC 4.2-A) and class design (DOC 6.1-A) to establish naming rules and file organization standards appropriate for selected technologies.
+    
+    Guiding questions:
+    - What naming conventions fit the language? (Java: camelCase, Python: snake_case)
+    - How should packages/namespaces be organized?
+    - What file naming conventions?
+    - How are classes, interfaces, methods, variables named?
+    - What naming for test files?
+    
+    Acceptance criteria:
+    - Naming convention defined for: packages/namespaces, classes, interfaces, methods, variables, constants, files
+    - Conventions aligned with language idioms from tech stack (DOC 4.2-A)
+    - Package/namespace organization specified (layers, components)
+    - File organization rules (one class per file, related files grouped)
+    - Examples provided for each convention
+    - Test file naming convention (e.g., ClassNameTest, test_function_name)
+    
+    Example:
+    "Java conventions: Classes PascalCase (OrderService), methods camelCase (calculateDiscount), constants UPPER_SNAKE_CASE (MAX_RETRY_COUNT), private fields with underscore prefix (_repository). Packages: com.company.project.layer.component (com.company.orderapp.service.order). One public class per file matching class name. Test classes: ClassNameTest (OrderServiceTest)."
+    
+    Red flags to watch for:
+    - Conventions conflicting with language standards
+    - Inconsistent naming (mixed styles)
+    - No test naming convention
+
+Task 7.4.2: Define Code Style and Formatting Standards
+    Specify code formatting rules for readability and consistency, configuring automated tools to enforce standards.
+    
+    Guiding questions:
+    - What indentation? (spaces vs tabs, how many)
+    - What line length limit?
+    - Where do braces go? (same line vs new line)
+    - How is whitespace used? (around operators, blank lines)
+    - What tools enforce formatting? (Prettier, Black, gofmt)
+    - What linting rules apply?
+    
+    Acceptance criteria:
+    - Indentation standard (spaces recommended: 2 or 4)
+    - Line length limit (80-120 characters)
+    - Brace placement consistent
+    - Whitespace rules defined
+    - Import/using statement ordering
+    - Linter configuration file created (ESLint, Pylint, Checkstyle)
+    - Formatter configuration file created (Prettier, Black)
+    - Pre-commit hooks configured to enforce
+    
+    Example:
+    "TypeScript: 2 spaces indentation, 100 char line limit, single quotes, trailing commas, semicolons required. ESLint config: no-unused-vars (error), no-console (warn), complexity max 10. Prettier config: printWidth 100, singleQuote true, trailingComma all. Pre-commit hook runs Prettier + ESLint. Import order: external libraries, internal modules, relative imports."
+    
+    Red flags to watch for:
+    - No automated enforcement (manual, inconsistent)
+    - Line length too long (>120 chars, hard to review)
+    - No linter configuration
+
+Task 7.4.3: Define Documentation and Quality Standards
+    Establish documentation requirements, code comment guidelines, and quality practices including security and performance considerations.
+    
+    Guiding questions:
+    - When should code be commented?
+    - What documentation comments required? (JavaDoc, XML Doc)
+    - What code quality metrics? (complexity, coverage)
+    - What security practices are mandatory?
+    - What performance practices?
+    
+    Acceptance criteria:
+    - Comment guidelines: when to comment (complex logic, non-obvious decisions), what not to comment (obvious code)
+    - Documentation comment standard for: public classes, public methods, complex algorithms
+    - Code quality thresholds: cyclomatic complexity (<10), method length (<50 lines), code coverage (>80%)
+    - Security rules: no hardcoded secrets, input validation required, parameterized queries only, sanitize user input
+    - Performance guidelines: avoid N+1 queries, use pagination for lists, close resources properly, prefer immutability
+    - Code review checklist defined
+    
+    Example:
+    "Comments: Explain why, not what (code shows what). Require JavaDoc for public methods with @param, @return, @throws. Complexity: max 10 per method (refactor higher), max 50 lines per method. Security: Never hardcode credentials (use config), always validate input, use PreparedStatement (never string concatenation SQL), sanitize HTML output. Performance: Use connection pooling, implement pagination for collections >100 items, close JDBC resources in try-with-resources."
+    
+    Red flags to watch for:
+    - "Comment everything" (noise, unmaintained)
+    - No security guidelines (vulnerabilities)
+    - No complexity limits (unmaintainable code)
+
+Deliverables:
+- DOC 7.4-A: Coding Standards Document
+- DOC 7.4-B: Linter/Formatter Configuration Files
+
+Output format:
+
+DOC 7.4-A: Coding Standards Document (6-10 pages)
+1. **Overview:** Purpose, scope, enforcement approach
+2. **Naming Conventions:** Classes, methods, variables, files, packages with examples
+3. **Code Formatting:** Indentation, line length, braces, whitespace with examples
+4. **Code Organization:** File structure, package/namespace organization, import ordering
+5. **Documentation:** When to comment, documentation comment format (JavaDoc/etc.), README requirements
+6. **Code Quality:** Complexity limits, method size, duplication, code coverage targets
+7. **Best Practices:** Error handling patterns, null handling, immutability preferences, concurrency guidelines
+8. **Security Standards:** Input validation, SQL injection prevention, XSS prevention, secrets management, authentication/authorization patterns
+9. **Performance Guidelines:** Database access, caching, resource management, algorithm efficiency
+10. **Code Review Checklist:** Items reviewers must check
+
+DOC 7.4-B: Linter/Formatter Configuration Files
+- Language-specific configuration files (.eslintrc, .prettierrc, pylintrc, checkstyle.xml, etc.)
+- Pre-commit hook scripts
+- IDE configuration files (optional, for team consistency)
+- Installation and setup instructions

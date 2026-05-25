@@ -1,0 +1,164 @@
+7.1 Algorithm Design
+
+Purpose:
+Specify complex business logic algorithms in detailed pseudocode before implementation to verify correctness, identify edge cases, and provide clear implementation guidance. This step focuses on algorithmic logic requiring careful design—not simple CRUD operations already specified in classes and sequences.
+
+Prerequisite deliverables from previous steps:
+- DOC 2.1-B: Use Case Specifications Document (from step 2.1)
+- DOC 3.1-A: Functional Requirements List (from step 3.1)
+- DOC 6.1-A: Detailed Class Diagrams (from step 6.1)
+
+Tasks:
+
+Task 7.1.1: Identify Complex Algorithms Requiring Specification
+    Use functional requirements (DOC 3.1-A) and class methods (DOC 6.1-A) to identify logic complex enough to warrant detailed algorithmic design before implementation.
+    
+    Guiding questions:
+    - Which business rules involve multiple conditions or calculations? (from 3.1-A)
+    - Which methods have complex logic? (from class diagrams 6.1-A)
+    - Where are calculations with multiple steps? (pricing, tax, discounts, scoring)
+    - Where is sorting, searching, or optimization needed?
+    - Which algorithms have performance concerns? (large data sets)
+    - Which logic is error-prone if not specified carefully?
+    
+    Acceptance criteria:
+    - 5-10 complex algorithms identified for detailed specification
+    - Simple CRUD or trivial logic excluded (don't over-specify)
+    - Each algorithm mapped to requirement(s) from DOC 3.1-A
+    - Each algorithm mapped to class method(s) from DOC 6.1-A
+    - Algorithms prioritized by complexity and business criticality
+    - Performance-critical algorithms flagged
+    
+    Example:
+    "Identified algorithms: 1) CalculateOrderDiscount (REQ-018, OrderService.calculateDiscount) - complex rules with loyalty tiers, promotional codes, volume discounts. 2) ValidateShippingAddress (REQ-012, AddressValidator.validate) - multi-step validation with external API. 3) MatchCustomerOrders (REQ-034, OrderMatcher.findSimilar) - fuzzy matching algorithm. 4) GenerateRecommendations (REQ-040, RecommendationEngine.generate) - collaborative filtering algorithm."
+    
+    Red flags to watch for:
+    - Specifying trivial logic (getters, simple assignments)
+    - Missing complex calculations mentioned in requirements
+    - No algorithms for performance-critical operations
+    - Too many algorithms (diminishing returns beyond 10-12)
+
+Task 7.1.2: Write Detailed Pseudocode and Flowcharts
+    Create structured pseudocode using plain language and flowcharts for complex decision trees, specifying exact logic, conditions, and calculations.
+    
+    Guiding questions:
+    - What are the inputs and outputs?
+    - What are the step-by-step operations?
+    - What conditions and branches exist?
+    - What loops are needed?
+    - How are edge cases handled?
+    - What helper functions/methods are called?
+    - What data structures are used?
+    
+    Acceptance criteria:
+    - Pseudocode written in structured format (indentation, clear control structures)
+    - Each algorithm includes: purpose, inputs, outputs, preconditions, postconditions
+    - All conditions explicitly stated (if/else if/else)
+    - All loops explicitly stated (for each, while)
+    - Variable names meaningful (not x, y, z)
+    - Edge cases handled (empty input, nulls, boundary values)
+    - Flowcharts created for algorithms with complex decision trees (>5 branches)
+    - Pseudocode readable by non-programmers (structured English, not programming syntax)
+    
+    Example:
+    ```
+    Algorithm: CalculateOrderDiscount
+    Input: order (Order object), customer (Customer object)
+    Output: discount amount (Money)
+    Precondition: order.totalAmount > 0, customer exists
+    
+    BEGIN
+        Set baseDiscount = 0
+        
+        // Loyalty tier discount
+        IF customer.loyaltyTier == "GOLD" THEN
+            Set baseDiscount = order.totalAmount × 0.15
+        ELSE IF customer.loyaltyTier == "SILVER" THEN
+            Set baseDiscount = order.totalAmount × 0.10
+        ELSE IF customer.loyaltyTier == "BRONZE" THEN
+            Set baseDiscount = order.totalAmount × 0.05
+        END IF
+        
+        // Volume discount (takes precedence if higher)
+        IF order.totalAmount > 500 THEN
+            Set volumeDiscount = order.totalAmount × 0.20
+            Set baseDiscount = MAX(baseDiscount, volumeDiscount)
+        ELSE IF order.totalAmount > 200 THEN
+            Set volumeDiscount = order.totalAmount × 0.12
+            Set baseDiscount = MAX(baseDiscount, volumeDiscount)
+        END IF
+        
+        // Promotional code (highest of all)
+        IF customer.hasActivePromoCode THEN
+            Set promoDiscount = ApplyPromoCode(order, customer.promoCode)
+            Set baseDiscount = MAX(baseDiscount, promoDiscount)
+        END IF
+        
+        // Cap at 50% (business rule REQ-018)
+        Set finalDiscount = MIN(baseDiscount, order.totalAmount × 0.50)
+        
+        RETURN finalDiscount
+    END
+    
+    Postcondition: 0 ≤ discount ≤ order.totalAmount × 0.50
+    ```
+    
+    Red flags to watch for:
+    - Vague pseudocode (lacks detail, ambiguous)
+    - Programming language syntax used (not pseudocode)
+    - Missing edge case handling (null, empty, boundary)
+    - No specification of error conditions
+    - Complex logic without flowchart visualization
+
+Task 7.1.3: Analyze Complexity and Edge Cases
+    Analyze algorithmic complexity (time/space) and systematically document edge cases requiring special handling.
+    
+    Guiding questions:
+    - What is time complexity? (Big O notation: O(1), O(n), O(n log n), O(n²))
+    - What is space complexity? (memory usage)
+    - Does performance meet requirements? (from NFRs)
+    - What are boundary conditions? (min/max values, empty sets)
+    - What are special cases? (nulls, duplicates, zero, negative)
+    - What invalid inputs must be rejected?
+    - Can algorithm be optimized?
+    
+    Acceptance criteria:
+    - Time complexity analyzed and documented (Big O notation)
+    - Space complexity analyzed
+    - Performance validated against requirements (response time, throughput)
+    - Edge cases documented systematically: empty input, single item, maximum values, nulls, duplicates, invalid data
+    - Optimization opportunities identified if performance inadequate
+    - Worst-case scenarios documented
+    
+    Example:
+    "CalculateOrderDiscount complexity: Time O(1) - constant time regardless of order size, all operations are simple comparisons and arithmetic. Space O(1) - fixed variables only. Performance: <1ms execution, meets REQ-055 requirement (<10ms for checkout). Edge cases: Empty order (return 0), negative amounts (validation rejects), expired promo code (treat as no code), multiple applicable discounts (algorithm takes highest), order total exactly $500 (volume discount applies at >$500, not ≥)."
+    
+    Red flags to watch for:
+    - No complexity analysis (potential performance issues)
+    - Algorithm exceeds performance requirements (needs optimization)
+    - Missing obvious edge cases (will cause bugs)
+    - No worst-case scenario consideration
+
+Deliverable:
+DOC 7.1-A: Algorithm Specifications
+
+Output format:
+Document containing (10-15 pages):
+
+1. **Algorithm Catalog:** Table with Algorithm Name, Purpose, Requirement ID (from 3.1-A), Class/Method (from 6.1-A), Complexity, Priority
+
+2. **Detailed Algorithm Specifications:** For each algorithm (1-2 pages each):
+   - **Header:** Name, purpose, related requirement(s), implementing class/method
+   - **Signature:** Inputs with types, output with type
+   - **Preconditions:** Assumptions that must be true
+   - **Pseudocode:** Structured, detailed, readable
+   - **Flowchart:** If complex decision logic (>5 branches)
+   - **Postconditions:** Guarantees after execution
+   - **Complexity Analysis:** Time and space complexity with justification
+   - **Edge Cases:** Systematic documentation of special cases and handling
+   - **Examples:** Input/output examples showing algorithm behavior
+   - **Optimization Notes:** If performance critical or optimization possible
+
+3. **Performance Requirements Validation:** Each algorithm validated against relevant NFRs, noting which meet/exceed requirements
+
+4. **Algorithm Dependencies:** Which algorithms call which other algorithms/methods

@@ -8,11 +8,15 @@ import DirectorReports from "@/pages/director/Reports";
 import HomePage from "@/pages/HomePage";
 import JobDetail from "@/pages/Jobs/JobDetail";
 import Login from "@/pages/Login";
+import ResetPassword from "@/pages/ResetPassword";
 import DashboardManager from "@/pages/manager/DashBoard";
 import Interviews from "@/pages/manager/Interviews";
 import Reviews from "@/pages/manager/Reviews";
 import NotFound from "@/pages/NotFound";
+import InterviewResponse from "@/pages/candidate/InterviewResponse";
 import OfferResponse from "@/pages/candidate/OfferResponse";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminUserManagement from "@/pages/admin/UserManagement";
 import ProbationerDashboard from "@/pages/probationer/Dashboard";
 import RecruiterCandidates from "@/pages/recruiter/Candidates";
 import RecruiterDashboard from "@/pages/recruiter/Dashboard";
@@ -30,7 +34,11 @@ const AppRoutes = () => {
         <Route path={ROUTES.home} element={<HomePage />} />
         <Route path={ROUTES.jobDetail} element={<JobDetail />} />
         <Route path={ROUTES.login} element={<Login />} />
+        <Route path={ROUTES.resetPassword} element={<ResetPassword />} />
       </Route>
+
+      {/* UC-06: Trang public cho ứng viên xác nhận/từ chối lịch PV (không có layout) */}
+      <Route path="/interview-confirm/:token" element={<InterviewResponse />} />
 
       {/* UC-10: Trang public cho ứng viên phản hồi Offer (không có layout) */}
       <Route path="/offer-response/:token" element={<OfferResponse />} />
@@ -74,6 +82,17 @@ const AppRoutes = () => {
         <Route path={ROUTES.director.dashboard} element={<DirectorDashboard />} />
         <Route path={ROUTES.director.approvals} element={<DirectorApprovals />} />
         <Route path={ROUTES.director.reports} element={<DirectorReports />} />
+      </Route>
+
+      <Route
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path={ROUTES.admin.dashboard} element={<AdminDashboard />} />
+        <Route path={ROUTES.admin.users} element={<AdminUserManagement />} />
       </Route>
 
       <Route
