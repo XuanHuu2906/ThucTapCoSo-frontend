@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { offerService, probationService } from "@/services";
 import { unwrapResponse } from "@/services/api";
+import { formatDate } from "@/utils/date";
 import toast from "react-hot-toast";
 import {
   Table,
@@ -91,7 +92,7 @@ export default function Approvals() {
           id: Number(offer.id),
           candidate: offer.candidateName,
           position: offer.jobTitle,
-          department: "",
+          department: offer.department || "",
           proposedSalary: `${Number(offer.baseSalary).toLocaleString("vi-VN")} ${offer.currency}`,
           recruiter: offer.createdBy,
           status: "Chờ duyệt",

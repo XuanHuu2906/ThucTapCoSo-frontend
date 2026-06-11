@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { useAuth } from './useAuth';
 
 export interface Notification {
@@ -23,12 +23,8 @@ export const useNotifications = () => {
     if (!token || !user) return;
     try {
       const [notifsRes, countRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/api/v1/notifications?limit=20`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/v1/notifications/unread-count`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        api.get(`/notifications?limit=20`),
+        api.get(`/notifications/unread-count`)
       ]);
       const notifsData = notifsRes.data?.data || notifsRes.data || [];
       const unreadData = countRes.data?.data || countRes.data || { unreadCount: 0 };
@@ -52,9 +48,7 @@ export const useNotifications = () => {
   const markAsRead = async (id: number) => {
     if (!token) return;
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/v1/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
@@ -65,9 +59,7 @@ export const useNotifications = () => {
   const markAllAsRead = async () => {
     if (!token) return;
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/v1/notifications/read-all`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/notifications/read-all`);
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {

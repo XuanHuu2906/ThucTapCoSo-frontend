@@ -202,7 +202,7 @@ const ProbationerDashboard: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-          Xin chào, {PROBATIONER_INFO.name} 👋
+          Xin chào, {PROBATIONER_INFO.name}
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           Theo dõi tiến trình thử việc và nhiệm vụ của bạn
@@ -281,8 +281,8 @@ const ProbationerDashboard: React.FC = () => {
                     progressPercent >= 90
                       ? "bg-amber-500"
                       : progressPercent >= 50
-                      ? "bg-blue-500"
-                      : "bg-emerald-500"
+                        ? "bg-blue-500"
+                        : "bg-emerald-500"
                   )}
                   style={{ width: `${progressPercent}%` }}
                 />
@@ -345,7 +345,7 @@ const ProbationerDashboard: React.FC = () => {
                   <>
                     <p className="text-3xl font-black text-slate-900 dark:text-slate-50 mt-1">
                       {evaluation.kpiScore}
-                      <span className="text-lg text-slate-400 font-medium">/10 KPI</span>
+                      <span className="text-lg text-slate-400 font-medium">/100 KPI</span>
                     </p>
                     <p className="text-xs text-amber-600 font-semibold mt-1">
                       Đề xuất: {evaluation.recommendation === "sign_contract" ? "Ký HĐ chính thức" : "Dừng thử việc"}
@@ -360,7 +360,7 @@ const ProbationerDashboard: React.FC = () => {
             </div>
             <div className="mt-4">
               <StarRating
-                rating={evaluation ? Math.round(evaluation.kpiScore / 2) : 0}
+                rating={evaluation ? Math.round(evaluation.kpiScore / 20) : 0}
               />
               <p className="text-[10px] text-slate-400 mt-1.5">
                 {evaluation ? "Đã đánh giá bởi Supervisor" : "Chờ quản lý đánh giá khi hết hạn"}
@@ -423,8 +423,8 @@ const ProbationerDashboard: React.FC = () => {
                     task.status === "completed"
                       ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600"
                       : task.status === "in_progress"
-                      ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600"
-                      : "bg-slate-50 dark:bg-slate-800 text-slate-400"
+                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-400"
                   )}
                 >
                   <StatusIcon size={16} />
@@ -488,8 +488,8 @@ const ProbationerDashboard: React.FC = () => {
                   Đánh giá chính thức
                 </span>
                 <div className="flex items-center gap-4">
-                  <span className="text-xs text-slate-400">KPI: {evaluation.kpiScore}/10</span>
-                  <StarRating rating={Math.round(evaluation.kpiScore / 2)} />
+                  <span className="text-xs text-slate-400">KPI: {evaluation.kpiScore}/100</span>
+                  <StarRating rating={Math.round(evaluation.kpiScore / 20)} />
                 </div>
               </div>
               <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">

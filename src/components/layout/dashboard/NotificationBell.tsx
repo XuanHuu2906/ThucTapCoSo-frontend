@@ -22,10 +22,9 @@ const timeAgo = (dateStr: string) => {
 export const NotificationBell: React.FC = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  useClickOutside(dropdownRef, () => setIsOpen(false));
+  const dropdownRef = useClickOutside<HTMLDivElement>(() => setIsOpen(false));
 
   const handleNotificationClick = async (notification: any) => {
     if (!notification.isRead) {

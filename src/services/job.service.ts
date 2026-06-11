@@ -1,5 +1,5 @@
 import api, { type ApiParams, unwrapResponse } from "./api";
-import type { Job, JobFilter, JobPayload, JobStatus } from "@/types";
+import type { Job, JobFilter, JobPayload, JobStatus, JobType, ExperienceLevel } from "@/types";
 
 type BackendJob = {
   jobId: number;

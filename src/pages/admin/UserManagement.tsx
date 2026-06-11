@@ -38,6 +38,9 @@ export default function UserManagement() {
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [departments, setDepartments] = useState<string[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editFormData, setEditFormData] = useState({ fullName: "", role: "Recruiter", department: "" });
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -92,6 +95,24 @@ export default function UserManagement() {
       fetchUsers();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Lỗi khi cập nhật trạng thái");
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUserId) return;
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      await api.put(`/users/${editingUserId}`, editFormData);
+      toast.success("Cập nhật thông tin thành công!");
+      setShowEditModal(false);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Có lỗi xảy ra khi cập nhật.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -193,6 +214,20 @@ export default function UserManagement() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingUserId(user.userId);
+                          setEditFormData({
+                            fullName: user.fullName,
+                            role: user.role,
+                            department: user.department || ""
+                          });
+                          setShowEditModal(true);
+                        }}
+                        className="text-xs font-medium text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                      >
+                        Sửa
+                      </button>
                       <button
                         onClick={() => handleResetPassword(user.userId)}
                         disabled={user.status !== "Active"}
@@ -303,6 +338,80 @@ export default function UserManagement() {
                   className="flex-1 h-11 rounded-xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition disabled:opacity-60"
                 >
                   {isSubmitting ? "Đang tạo..." : "Tạo người dùng"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowEditModal(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-4">Chỉnh sửa người dùng</h2>
+
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 p-3 mb-4 text-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Họ tên</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.fullName}
+                  onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 text-sm text-slate-900 dark:text-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Vai trò</label>
+                <select
+                  value={editFormData.role}
+                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 text-sm text-slate-900 dark:text-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                >
+                  <option value="Recruiter">Chuyên viên Tuyển dụng</option>
+                  <option value="HiringManager">Trưởng bộ phận</option>
+                  <option value="Director">Giám đốc</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Phòng ban</label>
+                <select
+                  value={editFormData.department}
+                  onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value })}
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 text-sm text-slate-900 dark:text-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                >
+                  <option value="">-- Không phân phòng ban --</option>
+                  {departments.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 h-11 rounded-xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition disabled:opacity-60"
+                >
+                  {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
             </form>

@@ -138,6 +138,14 @@ const Interviews = () => {
       return <Badge className="bg-yellow-50 text-yellow-700">{status}</Badge>;
     }
 
+    if (status === "Đã xác nhận") {
+      return <Badge className="bg-emerald-50 text-emerald-700">{status}</Badge>;
+    }
+
+    if (status === "Đã từ chối") {
+      return <Badge className="bg-red-50 text-red-700">{status}</Badge>;
+    }
+
     if (status === "Hoàn thành") {
       return <Badge className="bg-blue-50 text-blue-700">{status}</Badge>;
     }
@@ -149,7 +157,9 @@ const Interviews = () => {
     return <Badge>{status}</Badge>;
   }
 
-  const upcomingInterviews = interviews.filter((row) => row.status === "Chờ xác nhận");
+  const upcomingInterviews = interviews.filter(
+    (row) => row.status === "Chờ xác nhận" || row.status === "Đã xác nhận"
+  );
   const scoredInterviews = interviews.filter(
     (row) => row.status === "Hoàn thành" || row.status === "Không đạt"
   );
@@ -182,7 +192,7 @@ const Interviews = () => {
                 <TableCell>{getStatusBadge(row.status)}</TableCell>
                 {showAction && (
                   <TableCell className="text-right">
-                    {row.status === "Chờ xác nhận" ? (
+                    {row.status === "Chờ xác nhận" || row.status === "Đã xác nhận" ? (
                       <EvaluateDialog
                         row={row}
                         onEvaluated={(newStatus) => {
