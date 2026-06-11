@@ -7,7 +7,7 @@ import {
     DollarSign
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { applicationService, interviewService } from "@/services";
+import { applicationService, interviewService, userService } from "@/services";
 import type { Application, ApplicationStatus, InterviewRound } from "@/types";
 import { CANDIDATE_STATUS_COLORS, CANDIDATE_STATUS_LABELS, CANDIDATE_STATUS_TABS } from "@/lib/constants";
 import { formatDate } from "@/utils/date";
@@ -46,7 +46,7 @@ export default function Candidates() {
         date: "",
         time: "",
         location: "",
-        interviewerId: "",
+        interviewerId: "2",
         round: "technical" as InterviewRound,
     });
 
@@ -55,19 +55,25 @@ export default function Candidates() {
         try {
             const applications = await applicationService.getApplications();
             setCandidates(
-                applications.map((application) => ({
-                    id: application.candidateId,
-                    applicationId: application.id,
-                    name: application.candidateName,
-                    title: application.jobTitle,
-                    email: application.candidateEmail,
-                    phone: application.candidatePhone,
-                    appliedAt: formatDate(application.appliedAt),
-                    status: CANDIDATE_STATUS_LABELS[application.status],
-                    rawStatus: application.status,
-                    cvUrl: application.cvUrl,
-                    jobId: application.jobId,
-                }))
+                applications.map((application) => {
+                    let displayStatus = CANDIDATE_STATUS_LABELS[application.status];
+                    if (application.status === "interviewing" && application.interviewConfirmStatus === "Confirmed") {
+                        displayStatus = "Đã xác nhận";
+                    }
+                    return {
+                        id: application.candidateId,
+                        applicationId: application.id,
+                        name: application.candidateName,
+                        title: application.jobTitle,
+                        email: application.candidateEmail,
+                        phone: application.candidatePhone,
+                        appliedAt: formatDate(application.appliedAt),
+                        status: displayStatus,
+                        rawStatus: application.status,
+                        cvUrl: application.cvUrl,
+                        jobId: application.jobId,
+                    };
+                })
             );
         } catch (e) {
             setError("Không thể tải danh sách ứng viên.");
@@ -140,7 +146,7 @@ export default function Candidates() {
             date: "",
             time: "",
             location: "",
-            interviewerId: hiringManagers[0]?.id || "",
+            interviewerId: hiringManagers[0]?.id || "2",
             round: "technical",
         });
     };
@@ -154,7 +160,7 @@ export default function Candidates() {
         let matchesTab = false;
         if (activeTab === "Tất cả") matchesTab = true;
         else if (activeTab === "Mới") matchesTab = candidate.status === "Mới";
-        else if (activeTab === "Đã chọn") matchesTab = ["Đã chọn", "Qua PV", "Hẹn PV", "Chờ offer"].includes(candidate.status);
+        else if (activeTab === "Đã chọn") matchesTab = ["Đã chọn", "Qua PV", "Hẹn PV", "Đã xác nhận", "Chờ offer"].includes(candidate.status);
         else if (activeTab === "Đã tuyển") matchesTab = candidate.status === "Đã tuyển";
         else if (activeTab === "Đã loại") matchesTab = candidate.status === "Đã loại";
 
@@ -165,7 +171,7 @@ export default function Candidates() {
     const getTabCount = (tab: string) => {
         if (tab === "Tất cả") return candidates.length;
         if (tab === "Mới") return candidates.filter(c => c.status === "Mới").length;
-        if (tab === "Đã chọn") return candidates.filter(c => ["Đã chọn", "Qua PV", "Hẹn PV", "Chờ offer"].includes(c.status)).length;
+        if (tab === "Đã chọn") return candidates.filter(c => ["Đã chọn", "Qua PV", "Hẹn PV", "Đã xác nhận", "Chờ offer"].includes(c.status)).length;
         if (tab === "Đã tuyển") return candidates.filter(c => c.status === "Đã tuyển").length;
         if (tab === "Đã loại") return candidates.filter(c => c.status === "Đã loại").length;
         return 0;
@@ -229,7 +235,7 @@ export default function Candidates() {
                 await interviewService.updateInterview(interviewForm.id, {
                     scheduledAt,
                     location: interviewForm.location,
-                    // Lưu ý: service hiện tại chỉ hỗ trợ update ngày và location
+                    interviewerIds: [interviewForm.interviewerId],
                 });
             } else {
                 // Tạo lịch mới
@@ -414,12 +420,12 @@ export default function Candidates() {
                                     </>
                                 )}
 
-                                {["Đã chọn", "Hẹn PV"].includes(candidate.status) && (
+                                {["Đã chọn", "Hẹn PV", "Đã xác nhận"].includes(candidate.status) && (
                                     <button
                                         onClick={() => openModal(candidate, "interview")}
                                         className="flex-[2] inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition-all active:scale-95"
                                     >
-                                        <Calendar size={14} /> {candidate.status === 'Hẹn PV' ? 'Đổi lịch PV' : 'Đặt lịch PV'}
+                                        <Calendar size={14} /> {["Hẹn PV", "Đã xác nhận"].includes(candidate.status) ? 'Đổi lịch PV' : 'Đặt lịch PV'}
                                     </button>
                                 )}
 
@@ -646,8 +652,8 @@ export default function Candidates() {
                                                     >
                                                         {hiringManagers.length > 0 ? (
                                                             hiringManagers.map(hm => (
-                                                                <option key={hm.userId} value={hm.userId}>
-                                                                    {hm.fullName} {hm.department ? `(HM - ${hm.department})` : ''}
+                                                                <option key={hm.id} value={hm.id}>
+                                                                    {hm.name} {hm.department ? `(HM - ${hm.department})` : ''}
                                                                 </option>
                                                             ))
                                                         ) : (

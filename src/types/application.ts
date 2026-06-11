@@ -40,6 +40,7 @@ export interface Application {
   updatedAt: string;           // Lần cuối cập nhật trạng thái
   note?: string;               // Ghi chú nội bộ của recruiter – ứng viên không nhìn thấy
   interviewIds?: string[];     // Danh sách ID các buổi phỏng vấn thuộc đơn này
+  interviewConfirmStatus?: string; // Trạng thái xác nhận của buổi phỏng vấn
 }
 
 /**

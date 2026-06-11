@@ -96,6 +96,7 @@ export const interviewService = {
     const response = await api.put<BackendInterview>(`/interviews/${id}`, {
       interviewDate: payload.scheduledAt,
       location: payload.location ?? payload.meetingUrl,
+      interviewerId: payload.interviewerIds?.[0] ? Number(payload.interviewerIds[0]) : undefined,
     });
     return mapInterview(unwrapResponse(response));
   },

@@ -94,17 +94,9 @@ export default function DirectorDashboard() {
   const [applications, setApplications] = useState<Application[]>([]);
 
   useEffect(() => {
-    Promise.all([
-      offerService.getOffers(),
-      probationService.getProbationers(),
-      applicationService.getApplications(),
-    ])
-      .then(([offerList, probationList, applicationList]) => {
-        setOffers(offerList);
-        setProbations(probationList);
-        setApplications(applicationList);
-      })
-      .catch(() => undefined);
+    offerService.getOffers().then(setOffers).catch(() => undefined);
+    probationService.getProbationers().then(setProbations).catch(() => undefined);
+    applicationService.getApplications().then(setApplications).catch(() => undefined);
   }, []);
 
   const pendingOffers = offers.filter((offer) => offer.status === "pending_approval");

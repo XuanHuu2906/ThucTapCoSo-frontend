@@ -29,6 +29,7 @@ export interface Offer {
   candidateEmail: string;      // Email ứng viên – dùng để gửi thư mời (REQ-017)
   jobId: string;               // ID vị trí tuyển dụng
   jobTitle: string;            // Tên vị trí – chép từ Job để hiển thị
+  department?: string;         // Tên phòng ban tuyển dụng
 
   // Thông tin lương và đãi ngộ (UC-08 luồng chính, REQ-015)
   baseSalary: number;          // Lương cơ bản

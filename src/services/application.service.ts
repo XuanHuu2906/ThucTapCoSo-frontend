@@ -25,6 +25,9 @@ export type BackendApplication = {
     title: string;
     deptName: string;
   };
+  interviews?: {
+    confirmStatus: string;
+  }[];
 };
 
 const statusMap: Record<string, ApplicationStatus> = {
@@ -64,6 +67,7 @@ export const mapApplication = (application: BackendApplication): Application => 
   status: statusMap[application.status] ?? "new",
   appliedAt: application.appliedDate,
   updatedAt: application.appliedDate,
+  interviewConfirmStatus: application.interviews?.[0]?.confirmStatus,
 });
 
 export const applicationService = {

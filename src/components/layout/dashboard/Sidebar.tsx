@@ -53,13 +53,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed, role }) => {
 
       {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-        {!collapsed && (
-          <p className="px-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 mt-2">
-            Hệ thống
-          </p>
-        )}
-        {collapsed && <div className="h-6 mt-2 mb-4"></div>}
-
         {navItems.map((item) => (
           <NavLink
             key={item.to}

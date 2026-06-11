@@ -19,7 +19,7 @@ type BackendOffer = {
   createdAt: string;
   application?: {
     candidate?: { candidateId: number; fullName: string; email: string };
-    jobPosting?: { jobId: number; title: string };
+    jobPosting?: { jobId: number; title: string; deptName?: string };
   };
 };
 
@@ -60,6 +60,7 @@ const mapOffer = (offer: BackendOffer): Offer => ({
   declineReason: offer.declineReason ?? undefined,
   createdAt: offer.createdAt,
   updatedAt: offer.createdAt,
+  department: offer.application?.jobPosting?.deptName ?? "",
 });
 
 export const offerService = {

@@ -89,13 +89,23 @@ export const ManagerProvider = ({ children }: { children: ReactNode }) => {
       .getInterviews()
       .then((items) =>
         setInterviews(
-          items.map((item) => ({
-            id: Number(item.id),
-            name: item.candidateName,
-            role: item.jobTitle,
-            status: item.status === "done" ? "Hoàn thành" : "Chờ xác nhận",
-            date: formatDate(item.scheduledAt),
-          }))
+          items.map((item) => {
+            let displayStatus = "Chờ xác nhận";
+            if (item.status === "done") {
+              displayStatus = "Hoàn thành";
+            } else if (item.status === "confirmed") {
+              displayStatus = "Đã xác nhận";
+            } else if (item.status === "declined") {
+              displayStatus = "Đã từ chối";
+            }
+            return {
+              id: Number(item.id),
+              name: item.candidateName,
+              role: item.jobTitle,
+              status: displayStatus,
+              date: formatDate(item.scheduledAt),
+            };
+          })
         )
       )
       .catch(() => undefined);

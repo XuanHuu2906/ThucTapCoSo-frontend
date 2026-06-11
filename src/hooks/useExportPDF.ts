@@ -4,7 +4,7 @@ import { pdf } from '@react-pdf/renderer';
 export const useExportPDF = () => {
   const [isExporting, setIsExporting] = useState(false);
 
-  const exportPDF = async (DocumentComponent: React.ReactElement, fileName: string) => {
+  const exportPDF = async (DocumentComponent: React.ReactElement<any>, fileName: string) => {
     setIsExporting(true);
     try {
       const blob = await pdf(DocumentComponent).toBlob();
