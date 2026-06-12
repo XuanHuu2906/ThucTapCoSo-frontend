@@ -41,6 +41,7 @@ export interface Application {
   note?: string;               // Ghi chú nội bộ của recruiter – ứng viên không nhìn thấy
   interviewIds?: string[];     // Danh sách ID các buổi phỏng vấn thuộc đơn này
   interviewConfirmStatus?: string; // Trạng thái xác nhận của buổi phỏng vấn
+  jobDepartment?: string;      // Tên phòng ban của vị trí tuyển dụng (deptName)
 }
 
 /**

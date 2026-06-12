@@ -211,7 +211,7 @@ const JobDetail: React.FC = () => {
                     <input
                       type="text"
                       required
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       value={applyForm.fullName}
                       onChange={e => setApplyForm(prev => ({ ...prev, fullName: e.target.value }))}
                     />
@@ -223,7 +223,7 @@ const JobDetail: React.FC = () => {
                       <input
                         type="email"
                         required
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                         value={applyForm.email}
                         onChange={e => setApplyForm(prev => ({ ...prev, email: e.target.value }))}
                       />
@@ -233,7 +233,7 @@ const JobDetail: React.FC = () => {
                       <input
                         type="tel"
                         required
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                         value={applyForm.phone}
                         onChange={e => setApplyForm(prev => ({ ...prev, phone: e.target.value }))}
                       />

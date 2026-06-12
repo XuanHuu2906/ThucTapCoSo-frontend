@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
     Search, Mail, Phone, Calendar, FileText,
@@ -25,9 +26,11 @@ type CandidateCard = {
     rawStatus: ApplicationStatus;
     cvUrl: string;
     jobId: string;
+    department: string;
 };
 
 export default function Candidates() {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("Tất cả");
     const [searchQuery, setSearchQuery] = useState("");
     const [positionFilter, setPositionFilter] = useState("Tất cả vị trí");
@@ -49,6 +52,13 @@ export default function Candidates() {
         interviewerId: "2",
         round: "technical" as InterviewRound,
     });
+
+    const filteredHiringManagers = useMemo(() => {
+        if (!selectedCandidate?.department) return hiringManagers;
+        const candidateDept = selectedCandidate.department.trim().toLowerCase();
+        const filtered = hiringManagers.filter(hm => hm.department?.trim().toLowerCase() === candidateDept);
+        return filtered.length > 0 ? filtered : hiringManagers;
+    }, [hiringManagers, selectedCandidate]);
 
     const fetchCandidates = useCallback(async () => {
         setIsLoading(true);
@@ -72,6 +82,7 @@ export default function Candidates() {
                         rawStatus: application.status,
                         cvUrl: application.cvUrl,
                         jobId: application.jobId,
+                        department: application.jobDepartment || "",
                     };
                 })
             );
@@ -108,31 +119,43 @@ export default function Candidates() {
         setSelectedCandidate(candidate);
         setModalMode(mode);
 
-        // Nếu là phỏng vấn và đã có lịch thì lấy dữ liệu cũ
-        if (mode === "interview" && candidate.rawStatus === "interviewing") {
-            try {
-                const interviews = await interviewService.getInterviews({ candidateId: candidate.applicationId });
-                if (interviews.length > 0) {
-                    const latest = interviews[0];
-                    const dateObj = new Date(latest.scheduledAt);
+        if (mode === "interview") {
+            // Calculate filtered HMs right here for the candidate
+            const candidateDept = candidate.department?.trim().toLowerCase();
+            const filtered = hiringManagers.filter(hm => hm.department?.trim().toLowerCase() === candidateDept);
+            const defaultHMId = filtered.length > 0 ? filtered[0].id : (hiringManagers[0]?.id || "2");
 
-                    const year = dateObj.getFullYear();
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    const day = String(dateObj.getDate()).padStart(2, '0');
-                    const hours = String(dateObj.getHours()).padStart(2, '0');
-                    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            setInterviewForm(prev => ({
+                ...prev,
+                interviewerId: defaultHMId
+            }));
 
-                    setInterviewForm({
-                        id: latest.id,
-                        date: `${year}-${month}-${day}`,
-                        time: `${hours}:${minutes}`,
-                        location: latest.location || "",
-                        interviewerId: latest.interviewerIds[0] || hiringManagers[0]?.id || "",
-                        round: latest.round,
-                    });
+            // Nếu là phỏng vấn và đã có lịch thì lấy dữ liệu cũ
+            if (candidate.rawStatus === "interviewing") {
+                try {
+                    const interviews = await interviewService.getInterviews({ candidateId: candidate.applicationId });
+                    if (interviews.length > 0) {
+                        const latest = interviews[0];
+                        const dateObj = new Date(latest.scheduledAt);
+
+                        const year = dateObj.getFullYear();
+                        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        const day = String(dateObj.getDate()).padStart(2, '0');
+                        const hours = String(dateObj.getHours()).padStart(2, '0');
+                        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+                        setInterviewForm({
+                            id: latest.id,
+                            date: `${year}-${month}-${day}`,
+                            time: `${hours}:${minutes}`,
+                            location: latest.location || "",
+                            interviewerId: latest.interviewerIds[0] || defaultHMId,
+                            round: latest.round,
+                        });
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi lấy lịch phỏng vấn:", error);
                 }
-            } catch (error) {
-                console.error("Lỗi khi lấy lịch phỏng vấn:", error);
             }
         }
     };
@@ -431,7 +454,7 @@ export default function Candidates() {
 
                                 {candidate.status === "Qua PV" && (
                                     <button
-                                        onClick={() => openModal(candidate, "offer")}
+                                        onClick={() => navigate(`/recruiter/offers?applicationId=${candidate.applicationId}`)}
                                         className="flex-[2] inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 transition-all active:scale-95"
                                     >
                                         <DollarSign size={14} /> Tạo Offer
@@ -650,8 +673,8 @@ export default function Candidates() {
                                                         value={interviewForm.interviewerId}
                                                         onChange={e => setInterviewForm(prev => ({ ...prev, interviewerId: e.target.value }))}
                                                     >
-                                                        {hiringManagers.length > 0 ? (
-                                                            hiringManagers.map(hm => (
+                                                        {filteredHiringManagers.length > 0 ? (
+                                                            filteredHiringManagers.map(hm => (
                                                                 <option key={hm.id} value={hm.id}>
                                                                     {hm.name} {hm.department ? `(HM - ${hm.department})` : ''}
                                                                 </option>
@@ -674,7 +697,6 @@ export default function Candidates() {
                                         <div className="space-y-5">
                                             <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl flex items-center gap-3 border border-emerald-100 dark:border-emerald-500/20 mb-4">
                                                 <CheckCircle2 className="text-emerald-600 shrink-0" size={24} />
-                                                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 leading-snug">Ứng viên đã đạt yêu cầu chuyên môn. Nhập các thông tin đãi ngộ để gửi Director phê duyệt (UC-08).</p>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-1.5">
