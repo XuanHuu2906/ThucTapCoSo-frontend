@@ -124,7 +124,7 @@ const mapProbationer = (item: ApiProbationer): ProbationerRow => ({
   endDate: item.endDate,
   status: item.status,
   progress: calculateProgress(item.startDate, item.endDate, item.status),
-  daysLeft: getDaysLeft(item.endDate),
+  daysLeft: getDaysLeft(item.endDate, item.startDate),
 });
 
 const getDisplayStatus = (item: ProbationerRow): DisplayStatus => {

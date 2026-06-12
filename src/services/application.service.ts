@@ -68,6 +68,7 @@ export const mapApplication = (application: BackendApplication): Application => 
   appliedAt: application.appliedDate,
   updatedAt: application.appliedDate,
   interviewConfirmStatus: application.interviews?.[0]?.confirmStatus,
+  jobDepartment: application.jobPosting?.deptName,
 });
 
 export const applicationService = {

@@ -13,21 +13,8 @@ import { offerService, probationService } from "@/services";
 import { unwrapResponse } from "@/services/api";
 import { formatDate } from "@/utils/date";
 import toast from "react-hot-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import Button from "@/components/ui/Button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 // Kiểu dữ liệu cho danh sách Offer chờ duyệt (mở rộng thông tin chi tiết)
 type OfferItem = {
@@ -191,70 +178,64 @@ export default function Approvals() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-primary" />
-          <p className="text-sm text-muted-foreground">Đang tải dữ liệu phê duyệt...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-800 border-t-blue-600" />
+          <p className="text-sm text-slate-500 dark:text-slate-400">Đang tải dữ liệu phê duyệt...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+      <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-slate-50">
             Trung tâm Phê duyệt
           </h1>
-          <p className="mt-2 text-sm md:text-base text-muted-foreground">
-            Phê duyệt đề xuất offer và kết quả thử việc trên cùng một màn hình
-          </p>
         </div>
 
         {error && (
-          <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm font-semibold text-destructive">
+          <div className="rounded-2xl border border-rose-100 dark:border-rose-950/35 bg-rose-50 dark:bg-rose-950/15 p-4 text-sm font-semibold text-rose-600 dark:text-rose-400">
             {error}
           </div>
         )}
 
-
-
-
         {/* 2 ô tóm tắt đầu trang */}
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <p className="text-sm text-muted-foreground">Offer Đề xuất</p>
-            <h3 className="mt-2 text-3xl font-bold text-card-foreground">
+          <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm group hover:scale-[1.02] transition-all">
+            <p className="text-xs font-bold text-slate-450 uppercase tracking-widest">Offer Đề xuất</p>
+            <h3 className="mt-2 text-3xl font-black text-slate-900 dark:text-slate-50">
               {summary.offers}
             </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Mức lương và chức danh đang chờ giám đốc phê duyệt
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <p className="text-sm text-muted-foreground">Kết quả Thử việc</p>
-            <h3 className="mt-2 text-3xl font-bold text-card-foreground">
+          <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm group hover:scale-[1.02] transition-all">
+            <p className="text-xs font-bold text-slate-455 uppercase tracking-widest">Kết quả Thử việc</p>
+            <h3 className="mt-2 text-3xl font-black text-slate-900 dark:text-slate-50">
               {summary.probation}
             </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Hồ sơ probation đã đủ điều kiện để ra quyết định cuối
             </p>
           </div>
         </div>
 
         {/* Khối chính chứa tabs và nội dung */}
-        <div className="rounded-2xl border border-border bg-card shadow-sm">
+        <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
           {/* Thanh tabs */}
-          <div className="border-b border-border p-4">
-            <div className="inline-flex rounded-xl bg-muted p-1">
+          <div className="border-b border-slate-100 dark:border-slate-800 p-4">
+            <div className="inline-flex rounded-2xl bg-slate-100 dark:bg-slate-800/50 p-1">
               <button
                 onClick={() => setActiveTab("offers")}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${activeTab === "offers"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${activeTab === "offers"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
                   }`}
               >
                 Offer Đề xuất (Offers)
@@ -262,9 +243,9 @@ export default function Approvals() {
 
               <button
                 onClick={() => setActiveTab("probation")}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${activeTab === "probation"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${activeTab === "probation"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
                   }`}
               >
                 Kết quả Thử Việc (Probation)
@@ -275,64 +256,64 @@ export default function Approvals() {
           <div className="p-4 md:p-6">
             {/* Nội dung tab Offer */}
             {activeTab === "offers" ? (
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ứng viên</TableHead>
-                      <TableHead>Chức danh</TableHead>
-                      <TableHead>Phòng ban</TableHead>
-                      <TableHead>Mức đề xuất</TableHead>
-                      <TableHead>Recruiter</TableHead>
-                      <TableHead className="text-right">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
+              <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/30 font-bold uppercase text-[10px] tracking-widest">
+                      <th className="px-6 py-4">Ứng viên</th>
+                      <th className="px-6 py-4">Chức danh</th>
+                      <th className="px-6 py-4">Phòng ban</th>
+                      <th className="px-6 py-4">Mức đề xuất</th>
+                      <th className="px-6 py-4">Recruiter</th>
+                      <th className="px-6 py-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
 
-                  <TableBody>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {offerData.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <tr>
+                        <td colSpan={6} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
                           Không có Offer nào cần phê duyệt.
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ) : (
                       offerData.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">
+                        <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                          <td className="px-6 py-4 font-medium">
                             <div className="flex items-center gap-3">
-                              <div className="rounded-full bg-muted p-2 text-foreground">
+                              <div className="rounded-full bg-slate-50 dark:bg-slate-800 p-2 text-slate-600 dark:text-slate-400">
                                 <FileText className="h-4 w-4" />
                               </div>
                               <div>
-                                <p className="font-semibold text-foreground">
+                                <p className="font-bold text-slate-900 dark:text-slate-50">
                                   {item.candidate}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                   {item.status}
                                 </p>
                               </div>
                             </div>
-                          </TableCell>
+                          </td>
 
-                          <TableCell className="font-semibold text-foreground">
+                          <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-50">
                             {item.position}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          </td>
+                          <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
                             {item.department}
-                          </TableCell>
-                          <TableCell className="font-semibold text-foreground">
+                          </td>
+                          <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-50">
                             {item.proposedSalary}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          </td>
+                          <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
                             {item.recruiter}
-                          </TableCell>
+                          </td>
 
                           {/* Cột thao tác */}
-                          <TableCell className="text-right">
+                          <td className="px-6 py-4 text-right">
                             <div className="flex flex-wrap items-center justify-end gap-2">
                               <Button
                                 variant="outline"
-                                className="h-8 px-2 py-1 text-xs"
+                                className="h-8 px-2 py-1 text-xs font-bold"
                                 disabled={processing === item.id}
                                 onClick={() => setSelectedOffer(item)}
                               >
@@ -340,7 +321,7 @@ export default function Approvals() {
                                 Xem
                               </Button>
                               <Button
-                                className="h-8 px-2 py-1 text-xs"
+                                className="h-8 px-2.5 py-1 text-xs font-bold bg-blue-600 text-white hover:bg-blue-500"
                                 onClick={() => handleApproveOffer(item.id)}
                                 disabled={processing === item.id}
                               >
@@ -349,7 +330,7 @@ export default function Approvals() {
                               </Button>
                               <Button
                                 variant="danger"
-                                className="h-8 px-2 py-1 text-xs"
+                                className="h-8 px-2.5 py-1 text-xs font-bold bg-rose-600 text-white hover:bg-rose-500"
                                 onClick={() => handleRejectOffer(item.id)}
                                 disabled={processing === item.id}
                               >
@@ -357,75 +338,75 @@ export default function Approvals() {
                                 Hủy
                               </Button>
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ))
                     )}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             ) : (
               /* Nội dung tab Probation */
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nhân sự</TableHead>
-                      <TableHead>Vị trí</TableHead>
-                      <TableHead>Phòng ban</TableHead>
-                      <TableHead>Hết hạn</TableHead>
-                      <TableHead>Khuyến nghị</TableHead>
-                      <TableHead className="text-right">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
+              <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/30 font-bold uppercase text-[10px] tracking-widest">
+                      <th className="px-6 py-4">Nhân sự</th>
+                      <th className="px-6 py-4">Vị trí</th>
+                      <th className="px-6 py-4">Phòng ban</th>
+                      <th className="px-6 py-4">Hết hạn</th>
+                      <th className="px-6 py-4">Khuyến nghị</th>
+                      <th className="px-6 py-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
 
-                  <TableBody>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {probationData.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <tr>
+                        <td colSpan={6} className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
                           Không có kết quả thử việc nào cần phê duyệt.
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ) : (
                       probationData.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">
+                        <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                          <td className="px-6 py-4 font-medium">
                             <div className="flex items-center gap-3">
                               <div>
-                                <p className="font-semibold text-foreground">
+                                <p className="font-bold text-slate-900 dark:text-slate-50">
                                   {item.employee}
                                 </p>
                               </div>
                             </div>
-                          </TableCell>
+                          </td>
 
-                          <TableCell className="font-semibold text-foreground">
+                          <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-50">
                             {item.position}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          </td>
+                          <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
                             {item.department}
-                          </TableCell>
+                          </td>
 
-                          <TableCell>
-                            <div className="inline-flex items-center gap-2 text-muted-foreground">
+                          <td className="px-6 py-4">
+                            <div className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400">
                               <Clock3 className="h-4 w-4" />
                               {item.endDate}
                             </div>
-                          </TableCell>
+                          </td>
 
-                          <TableCell>
-                            <span className="inline-flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-600 dark:text-green-400">
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-[10px] font-bold text-green-600 dark:text-green-400">
                               <BadgeCheck className="h-3.5 w-3.5" />
                               Khuyến nghị từ Manager: {item.managerRecommendation}
                             </span>
-                          </TableCell>
+                          </td>
 
                           {/* Cột thao tác */}
-                          <TableCell className="text-right">
+                          <td className="px-6 py-4 text-right">
                             <div className="flex flex-wrap items-center justify-end gap-2">
                               <Button
                                 variant="outline"
-                                className="h-8 px-2 py-1 text-xs"
+                                className="h-8 px-2 py-1 text-xs font-bold"
                                 disabled={processing === item.id}
                                 onClick={() => setSelectedProbation(item)}
                               >
@@ -433,7 +414,7 @@ export default function Approvals() {
                                 Xem
                               </Button>
                               <Button
-                                className="h-8 px-2 py-1 text-xs"
+                                className="h-8 px-2.5 py-1 text-xs font-bold bg-blue-600 text-white hover:bg-blue-500"
                                 onClick={() => handleApproveProbation(item.id)}
                                 disabled={processing === item.id}
                               >
@@ -442,7 +423,7 @@ export default function Approvals() {
                               </Button>
                               <Button
                                 variant="danger"
-                                className="h-8 px-2 py-1 text-xs"
+                                className="h-8 px-2.5 py-1 text-xs font-bold bg-rose-600 text-white hover:bg-rose-500"
                                 onClick={() => handleRejectProbation(item.id)}
                                 disabled={processing === item.id}
                               >
@@ -450,12 +431,12 @@ export default function Approvals() {
                                 Hủy
                               </Button>
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ))
                     )}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -463,55 +444,64 @@ export default function Approvals() {
       </div>
 
       {/* Modal chi tiết Offer */}
-      <Dialog open={selectedOffer !== null} onOpenChange={(open) => !open && setSelectedOffer(null)}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <FileText className="text-blue-600 h-5 w-5" />
-              Chi tiết đề xuất Offer
-            </DialogTitle>
-          </DialogHeader>
-          {selectedOffer && (
-            <div className="space-y-4 py-4 text-sm text-foreground">
-              <div className="grid grid-cols-3 gap-y-3 gap-x-2 border-b border-border pb-4">
-                <span className="text-muted-foreground font-medium">Ứng viên:</span>
-                <span className="col-span-2 font-semibold text-foreground">{selectedOffer.candidate}</span>
+      {selectedOffer !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-800 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+                <FileText className="text-blue-600 h-5 w-5" />
+                Chi tiết đề xuất Offer
+              </h2>
+              <button
+                onClick={() => setSelectedOffer(null)}
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-                <span className="text-muted-foreground font-medium">Email:</span>
-                <span className="col-span-2 text-foreground">{selectedOffer.email}</span>
+            <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
+              <div className="grid grid-cols-3 gap-y-3 gap-x-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Ứng viên:</span>
+                <span className="col-span-2 font-bold text-slate-900 dark:text-slate-50">{selectedOffer.candidate}</span>
 
-                <span className="text-muted-foreground font-medium">Vị trí:</span>
-                <span className="col-span-2 font-semibold text-foreground">{selectedOffer.position}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Email:</span>
+                <span className="col-span-2 text-slate-800 dark:text-slate-200">{selectedOffer.email}</span>
 
-                <span className="text-muted-foreground font-medium">Phòng ban:</span>
-                <span className="col-span-2 text-foreground">{selectedOffer.department || "Chưa thiết lập"}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Vị trí:</span>
+                <span className="col-span-2 font-bold text-slate-900 dark:text-slate-50">{selectedOffer.position}</span>
+
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Phòng ban:</span>
+                <span className="col-span-2 text-slate-800 dark:text-slate-200">{selectedOffer.department || "Chưa thiết lập"}</span>
               </div>
 
               <div className="grid grid-cols-3 gap-y-3 gap-x-2 pt-2">
-                <span className="text-muted-foreground font-medium">Lương cơ bản:</span>
-                <span className="col-span-2 font-semibold text-emerald-600 text-base">{selectedOffer.proposedSalary}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Lương cơ bản:</span>
+                <span className="col-span-2 font-black text-emerald-600 dark:text-emerald-400 text-base">{selectedOffer.proposedSalary}</span>
 
-                <span className="text-muted-foreground font-medium">Phụ cấp:</span>
-                <span className="col-span-2 font-semibold text-foreground">{selectedOffer.allowance}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Phụ cấp:</span>
+                <span className="col-span-2 font-bold text-slate-800 dark:text-slate-200">{selectedOffer.allowance}</span>
 
-                <span className="text-muted-foreground font-medium">Ngày bắt đầu:</span>
-                <span className="col-span-2 text-foreground">{selectedOffer.startDate}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Ngày bắt đầu:</span>
+                <span className="col-span-2 text-slate-800 dark:text-slate-200">{selectedOffer.startDate}</span>
 
-                <span className="text-muted-foreground font-medium">Trạng thái:</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Trạng thái:</span>
                 <span className="col-span-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-500/10 px-2.5 py-0.5 text-xs font-semibold text-yellow-600">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-500/10 px-2.5 py-0.5 text-xs font-bold text-yellow-600 dark:text-yellow-400">
                     <Clock3 className="h-3 w-3" />
                     Chờ duyệt
                   </span>
                 </span>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t border-border">
-                <Button variant="outline" onClick={() => setSelectedOffer(null)}>
+              <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">
+                <Button variant="outline" className="h-9 text-xs font-bold" onClick={() => setSelectedOffer(null)}>
                   Đóng
                 </Button>
                 <Button
                   variant="danger"
+                  className="h-9 text-xs font-bold bg-rose-600 text-white hover:bg-rose-500"
                   onClick={() => {
                     handleRejectOffer(selectedOffer.id);
                     setSelectedOffer(null);
@@ -522,6 +512,7 @@ export default function Approvals() {
                   Từ chối
                 </Button>
                 <Button
+                  className="h-9 text-xs font-bold bg-blue-600 text-white hover:bg-blue-500"
                   onClick={() => {
                     handleApproveOffer(selectedOffer.id);
                     setSelectedOffer(null);
@@ -533,63 +524,72 @@ export default function Approvals() {
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
 
       {/* Modal chi tiết kết quả thử việc */}
-      <Dialog open={selectedProbation !== null} onOpenChange={(open) => !open && setSelectedProbation(null)}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <ShieldCheck className="text-blue-600 h-5 w-5" />
-              Chi tiết đánh giá Thử việc
-            </DialogTitle>
-          </DialogHeader>
-          {selectedProbation && (
-            <div className="space-y-4 py-4 text-sm text-foreground">
-              <div className="grid grid-cols-3 gap-y-3 gap-x-2 border-b border-border pb-4">
-                <span className="text-muted-foreground font-medium">Nhân viên:</span>
-                <span className="col-span-2 font-semibold text-foreground">{selectedProbation.employee}</span>
+      {selectedProbation !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-800 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+                <ShieldCheck className="text-blue-600 h-5 w-5" />
+                Chi tiết đánh giá Thử việc
+              </h2>
+              <button
+                onClick={() => setSelectedProbation(null)}
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-                <span className="text-muted-foreground font-medium">Liên hệ:</span>
-                <span className="col-span-2 text-foreground">{selectedProbation.email} {selectedProbation.phone && `| ${selectedProbation.phone}`}</span>
+            <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
+              <div className="grid grid-cols-3 gap-y-3 gap-x-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Nhân viên:</span>
+                <span className="col-span-2 font-bold text-slate-900 dark:text-slate-50">{selectedProbation.employee}</span>
 
-                <span className="text-muted-foreground font-medium">Vị trí / Phòng:</span>
-                <span className="col-span-2 font-semibold text-foreground">{selectedProbation.position} {selectedProbation.department && `(${selectedProbation.department})`}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Liên hệ:</span>
+                <span className="col-span-2 text-slate-800 dark:text-slate-200">{selectedProbation.email} {selectedProbation.phone && `| ${selectedProbation.phone}`}</span>
 
-                <span className="text-muted-foreground font-medium">Người quản lý:</span>
-                <span className="col-span-2 text-foreground font-medium">{selectedProbation.supervisorName}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Vị trí / Phòng:</span>
+                <span className="col-span-2 font-bold text-slate-900 dark:text-slate-50">{selectedProbation.position} {selectedProbation.department && `(${selectedProbation.department})`}</span>
+
+                <span className="text-slate-400 dark:text-slate-500 font-bold">Người quản lý:</span>
+                <span className="col-span-2 text-slate-800 dark:text-slate-200 font-medium">{selectedProbation.supervisorName}</span>
               </div>
 
-              <div className="bg-muted/30 border border-border p-4 rounded-xl space-y-3">
+              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground font-medium">Điểm đánh giá KPI:</span>
-                  <span className="text-lg font-bold text-blue-600">{selectedProbation.kpiScore}/100</span>
+                  <span className="text-slate-400 dark:text-slate-500 font-bold">Điểm đánh giá KPI:</span>
+                  <span className="text-lg font-black text-blue-600 dark:text-blue-400">{selectedProbation.kpiScore}/100</span>
                 </div>
 
-                <div className="flex flex-col gap-1.5 border-t border-border/60 pt-3">
-                  <span className="text-muted-foreground font-medium">Khuyến nghị của Quản lý:</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400 w-fit">
+                <div className="flex flex-col gap-1.5 border-t border-slate-100 dark:border-slate-800 pt-3">
+                  <span className="text-slate-400 dark:text-slate-500 font-bold">Khuyến nghị của Quản lý:</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-600 dark:text-green-400 w-fit">
                     <BadgeCheck className="h-3.5 w-3.5" />
                     {selectedProbation.managerRecommendation}
                   </span>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-muted-foreground font-medium">Nhận xét chi tiết:</span>
-                  <p className="text-xs text-muted-foreground bg-white dark:bg-slate-900 border border-border/40 p-2.5 rounded-lg whitespace-pre-wrap leading-relaxed">
+                  <span className="text-slate-400 dark:text-slate-500 font-bold">Nhận xét chi tiết:</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed">
                     {selectedProbation.managerComment}
                   </p>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <Button variant="outline" onClick={() => setSelectedProbation(null)}>
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <Button variant="outline" className="h-9 text-xs font-bold" onClick={() => setSelectedProbation(null)}>
                   Đóng
                 </Button>
                 <Button
                   variant="danger"
+                  className="h-9 text-xs font-bold bg-rose-600 text-white hover:bg-rose-500"
                   onClick={() => {
                     handleRejectProbation(selectedProbation.id);
                     setSelectedProbation(null);
@@ -600,6 +600,7 @@ export default function Approvals() {
                   Từ chối
                 </Button>
                 <Button
+                  className="h-9 text-xs font-bold bg-blue-600 text-white hover:bg-blue-500"
                   onClick={() => {
                     handleApproveProbation(selectedProbation.id);
                     setSelectedProbation(null);
@@ -611,9 +612,9 @@ export default function Approvals() {
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

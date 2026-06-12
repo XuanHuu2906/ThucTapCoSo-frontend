@@ -30,13 +30,23 @@ export const formatDate = (
   return date.toLocaleDateString(VI_LOCALE);
 };
 
-export const getDaysLeft = (value: DateValue) => {
+export const getDaysLeft = (value: DateValue, startDate?: DateValue) => {
   const dueDate = parseDate(value);
   if (!dueDate) return 0;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   dueDate.setHours(0, 0, 0, 0);
+
+  if (startDate) {
+    const start = parseDate(startDate);
+    if (start) {
+      start.setHours(0, 0, 0, 0);
+      if (today.getTime() < start.getTime()) {
+        return Math.ceil((dueDate.getTime() - start.getTime()) / MILLISECONDS_PER_DAY);
+      }
+    }
+  }
 
   return Math.ceil((dueDate.getTime() - today.getTime()) / MILLISECONDS_PER_DAY);
 };

@@ -34,7 +34,21 @@ const MONTHLY_TREND = [
   { month: "T4", joined: 5, left: 1 },
 ];
 
-// ─── Component chính ─────────────────────────────────────────
+// Custom tooltip component for dark mode charts
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-3 rounded-2xl shadow-xl">
+        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{label}</p>
+        <p className="text-sm font-extrabold text-slate-900 dark:text-slate-50 mt-1">
+          {payload[0].name}: {payload[0].value}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const DirectorReports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -143,7 +157,7 @@ const DirectorReports: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-8 animate-in fade-in duration-500 bg-background min-h-screen print-container">
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto print-container">
       {/* CSS thiết lập giao diện in PDF chuyên nghiệp */}
       <style>{`
         @media print {
@@ -162,7 +176,7 @@ const DirectorReports: React.FC = () => {
             width: 100% !important;
             max-width: 100% !important;
           }
-          .bg-card {
+          .bg-white {
             background-color: white !important;
             border: 1px solid #e2e8f0 !important;
             box-shadow: none !important;
@@ -173,7 +187,7 @@ const DirectorReports: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-slate-50">
             Báo cáo tổng hợp
           </h1>
         </div>
@@ -183,20 +197,20 @@ const DirectorReports: React.FC = () => {
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              className="appearance-none inline-flex items-center justify-center rounded-xl bg-card border border-border pl-10 pr-10 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="appearance-none inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 pl-10 pr-10 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="Tất cả">Tất cả bộ phận</option>
               {allDepts.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
-            <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
           </div>
 
           {/* Xuất PDF thông minh */}
           <button
             onClick={handleExportPDF}
-            className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
+            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 transition-all active:scale-95 cursor-pointer"
           >
             <Download className="mr-2 h-4 w-4" />
             Xuất PDF
@@ -205,7 +219,7 @@ const DirectorReports: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-destructive/10 text-destructive text-sm p-4 rounded-xl border border-destructive/20 font-semibold">
+        <div className="bg-rose-50 dark:bg-rose-950/15 text-rose-600 dark:text-rose-400 text-sm p-4 rounded-xl border border-rose-100 dark:border-rose-950/35 font-semibold">
           {error}
         </div>
       )}
@@ -248,7 +262,7 @@ const DirectorReports: React.FC = () => {
         ].map((kpi, i) => (
           <div
             key={i}
-            className="bg-card p-6 rounded-3xl border border-border shadow-sm group hover:scale-[1.02] transition-all"
+            className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm group hover:scale-[1.02] transition-all"
           >
             <div className="flex justify-between items-start">
               <div className={cn("p-3 rounded-2xl", kpi.iconBg)}>
@@ -266,10 +280,10 @@ const DirectorReports: React.FC = () => {
               </span>
             </div>
             <div className="mt-4">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none">
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
                 {kpi.label}
               </p>
-              <p className="text-3xl font-black text-foreground mt-1">
+              <p className="text-3xl font-black text-slate-900 dark:text-slate-50 mt-1">
                 {kpi.val}
               </p>
             </div>
@@ -278,18 +292,18 @@ const DirectorReports: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
-        <div className="border-b border-border p-4 tabs-header">
-          <div className="inline-flex rounded-xl bg-muted p-1">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="border-b border-slate-100 dark:border-slate-800 p-4 tabs-header">
+          <div className="inline-flex rounded-2xl bg-slate-100 dark:bg-slate-800/50 p-1">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "rounded-lg px-4 py-2 text-sm font-medium transition",
+                  "rounded-xl px-4 py-2 text-xs font-bold transition-all",
                   activeTab === tab.key
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
                 )}
               >
                 {tab.label}
@@ -306,29 +320,22 @@ const DirectorReports: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <div className="lg:col-span-3">
                   <div className="mb-6">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wider">
-                      <BarChart3 size={16} className="text-primary" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2 uppercase tracking-wider">
+                      <BarChart3 size={16} className="text-blue-600 dark:text-blue-400" />
                       Chi phí & Số tuyển theo quý
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Ước lượng quỹ lương cơ bản tuyển mới (triệu VNĐ)
                     </p>
                   </div>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={quarterlyData} barGap={4}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
                         <XAxis dataKey="quarter" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                        <Tooltip
-                          contentStyle={{
-                            borderRadius: "16px",
-                            border: "none",
-                            boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                            backgroundColor: "#fff",
-                          }}
-                        />
-                        <Bar dataKey="budget" name="Ngân sách quý" fill="#e2e8f0" radius={[8, 8, 0, 0]} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="budget" name="Ngân sách quý" fill="#cbd5e1" radius={[8, 8, 0, 0]} />
                         <Bar dataKey="spent" name="Thực tế chi" fill="#3b82f6" radius={[8, 8, 0, 0]} />
                         <Bar dataKey="hired" name="Đã tuyển (Người)" fill="#10b981" radius={[8, 8, 0, 0]} />
                       </BarChart>
@@ -339,11 +346,11 @@ const DirectorReports: React.FC = () => {
                 {/* Phân bổ trạng thái tuyển dụng */}
                 <div className="lg:col-span-2">
                   <div className="mb-6">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wider">
-                      <PieChartIcon size={16} className="text-primary" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2 uppercase tracking-wider">
+                      <PieChartIcon size={16} className="text-blue-600 dark:text-blue-400" />
                       Trạng thái tuyển dụng
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Phân bổ ứng viên & nhân sự hiện tại
                     </p>
                   </div>
@@ -374,11 +381,11 @@ const DirectorReports: React.FC = () => {
                             className="h-2.5 w-2.5 rounded-full"
                             style={{ backgroundColor: item.color }}
                           />
-                          <span className="text-xs font-bold text-muted-foreground">
+                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
                             {item.name}
                           </span>
                         </div>
-                        <span className="text-xs font-black text-foreground">
+                        <span className="text-xs font-black text-slate-900 dark:text-slate-50">
                           {item.value}
                         </span>
                       </div>
@@ -395,28 +402,21 @@ const DirectorReports: React.FC = () => {
               {/* Thời gian tuyển dụng trung bình */}
               <div>
                 <div className="mb-6">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wider">
-                    <Clock size={16} className="text-primary" />
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2 uppercase tracking-wider">
+                    <Clock size={16} className="text-blue-600 dark:text-blue-400" />
                     Thời gian tuyển dụng trung bình (ngày)
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Thời gian ước lượng để hoàn thiện hồ sơ ứng viên theo bộ phận
                   </p>
                 </div>
                 <div className="h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={timeToHire} layout="vertical" barSize={20}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148, 163, 184, 0.1)" />
                       <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
                       <YAxis dataKey="position" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b", fontWeight: 600 }} width={90} />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: "16px",
-                          border: "none",
-                          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                          backgroundColor: "#fff",
-                        }}
-                      />
+                      <Tooltip content={<CustomTooltip />} />
                       <Bar dataKey="days" name="Số ngày trung bình" fill="#6366f1" radius={[0, 8, 8, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -426,22 +426,22 @@ const DirectorReports: React.FC = () => {
               {/* Bảng chi tiết phòng ban */}
               <div>
                 <div className="mb-4">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wider">
-                    <Building2 size={16} className="text-primary" />
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2 uppercase tracking-wider">
+                    <Building2 size={16} className="text-blue-600 dark:text-blue-400" />
                     Tuyển dụng theo phòng ban
                   </h3>
                 </div>
-                <div className="overflow-x-auto rounded-2xl ring-1 ring-border">
+                <div className="overflow-x-auto rounded-2xl ring-1 ring-slate-100 dark:ring-slate-800">
                   <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead>
-                      <tr className="border-b border-border bg-muted/50 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+                      <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                         <th className="px-6 py-4">Phòng ban</th>
                         <th className="px-6 py-4">Nhân sự thử việc</th>
                         <th className="px-6 py-4">Vị trí đang tuyển</th>
                         <th className="px-6 py-4">Tỷ lệ hoàn thành</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {departmentData.map((dept) => {
                         const totalPositions = dept.headcount + dept.openPositions;
                         const fillRate = totalPositions > 0
@@ -450,32 +450,32 @@ const DirectorReports: React.FC = () => {
                         return (
                           <tr
                             key={dept.name}
-                            className="hover:bg-muted/50 transition-colors"
+                            className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-xl bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center font-bold text-blue-600 text-sm">
+                                <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
                                   {dept.name.charAt(0)}
                                 </div>
-                                <span className="font-bold text-foreground">
+                                <span className="font-bold text-slate-900 dark:text-slate-50">
                                   {dept.name}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 font-semibold text-muted-foreground">
+                            <td className="px-6 py-4 font-semibold text-slate-500 dark:text-slate-400">
                               {dept.headcount} nhân sự
                             </td>
                             <td className="px-6 py-4">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-600 ring-1 ring-inset ring-amber-200/50">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 ring-1 ring-inset ring-amber-200/50">
                                 {dept.openPositions} tin tuyển dụng
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <div className="w-32 space-y-1.5">
                                 <div className="flex items-center justify-between text-[10px] font-bold">
-                                  <span className="text-muted-foreground">{fillRate}%</span>
+                                  <span className="text-slate-500 dark:text-slate-450">{fillRate}%</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                   <div
                                     className={cn(
                                       "h-full rounded-full transition-all duration-500",
@@ -544,17 +544,10 @@ const DirectorReports: React.FC = () => {
                           <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: "16px",
-                          border: "none",
-                          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                          backgroundColor: "#fff",
-                        }}
-                      />
+                      <Tooltip content={<CustomTooltip />} />
                       <Area
                         type="monotone"
                         dataKey="joined"
@@ -582,8 +575,8 @@ const DirectorReports: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <div className="mb-6">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wider">
-                      <Building2 size={16} className="text-primary" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2 uppercase tracking-wider">
+                      <Building2 size={16} className="text-blue-600 dark:text-blue-400" />
                       Phân bổ nhân sự thử việc theo phòng ban
                     </h3>
                   </div>
@@ -594,16 +587,16 @@ const DirectorReports: React.FC = () => {
                       return (
                         <div key={dept.name} className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-muted-foreground">
+                            <span className="font-bold text-slate-550 dark:text-slate-400">
                               {dept.name}
                             </span>
-                            <span className="font-black text-foreground">
+                            <span className="font-black text-slate-900 dark:text-slate-50">
                               {dept.headcount} nhân sự
                             </span>
                           </div>
-                          <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                          <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full transition-all duration-700"
+                              className="h-full bg-blue-600 rounded-full transition-all duration-700"
                               style={{ width: `${width}%` }}
                             />
                           </div>
@@ -621,7 +614,7 @@ const DirectorReports: React.FC = () => {
                       value: filteredProbationers.filter(p => p.status === "probating").length.toString(),
                       desc: "Nhân viên đang trong tiến trình thử việc",
                       icon: Clock,
-                      color: "text-amber-600",
+                      color: "text-amber-600 dark:text-amber-450",
                       bg: "bg-amber-50 dark:bg-amber-500/10",
                     },
                     {
@@ -629,7 +622,7 @@ const DirectorReports: React.FC = () => {
                       value: filteredProbationers.filter(p => p.status === "passed").length.toString(),
                       desc: "Số nhân viên được ký hợp đồng chính thức",
                       icon: CheckCircle2,
-                      color: "text-violet-600",
+                      color: "text-violet-600 dark:text-violet-450",
                       bg: "bg-violet-50 dark:bg-violet-500/10",
                     },
                     {
@@ -637,25 +630,25 @@ const DirectorReports: React.FC = () => {
                       value: filteredProbationers.filter(p => p.status === "failed").length.toString(),
                       desc: "Kết thúc thử việc hoặc chấm dứt",
                       icon: TrendingDown,
-                      color: "text-rose-600",
+                      color: "text-rose-600 dark:text-rose-450",
                       bg: "bg-rose-50 dark:bg-rose-500/10",
                     },
                   ].map((item, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-4 p-4 rounded-2xl border border-border hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors bg-white dark:bg-slate-900 shadow-sm"
                     >
                       <div className={cn("p-3 rounded-2xl", item.bg, item.color)}>
                         <item.icon size={20} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                           {item.label}
                         </p>
-                        <p className="text-xl font-black text-foreground mt-0.5">
+                        <p className="text-xl font-black text-slate-900 dark:text-slate-50 mt-0.5">
                           {item.value}
                         </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           {item.desc}
                         </p>
                       </div>

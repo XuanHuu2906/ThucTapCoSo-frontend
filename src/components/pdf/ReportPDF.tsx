@@ -138,7 +138,7 @@ export const ReportPDF: React.FC<{ data: ReportData }> = ({ data }) => {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>Báo Cáo Tuyển Dụng</Text>
-          <Text style={styles.subtitle}>Thời gian: {data.timeFilterLabel} | Vị trí: {data.jobFilterLabel} | Hệ thống quản lý tuyển dụng (UC-15)</Text>
+          <Text style={styles.subtitle}>Thời gian: {data.timeFilterLabel} | Vị trí: {data.jobFilterLabel} </Text>
         </View>
 
         <View style={styles.cardContainer}>
@@ -170,7 +170,7 @@ export const ReportPDF: React.FC<{ data: ReportData }> = ({ data }) => {
               <Text style={styles.tableCellHeader}>Số lượng hồ sơ</Text>
             </View>
           </View>
-          
+
           {data.deptData.map((item, index) => (
             <View style={styles.tableRow} key={index}>
               <View style={styles.tableCol}>
@@ -181,7 +181,7 @@ export const ReportPDF: React.FC<{ data: ReportData }> = ({ data }) => {
               </View>
             </View>
           ))}
-          
+
           {data.deptData.length === 0 && (
             <View style={styles.tableRow}>
               <View style={{ ...styles.tableCol, width: '100%' }}>
